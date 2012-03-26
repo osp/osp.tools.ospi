@@ -62,8 +62,8 @@ namespace ospi {
 			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument);
 			tdocuments[tdoc] = DocumentPtr(d);
 		}
-		DocumentPtr tdocptr(sdocuments[tdoc]);
-		if(tdocptr->GetPageCount() < tpagenumber)
+		DocumentPtr tdocptr(tdocuments[tdoc]);
+		if(tdocptr->GetPageCount() <= tpagenumber)
 		{
 			if(tdocptr->GetPageCount() == tpagenumber)
 				tdocptr->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight));
