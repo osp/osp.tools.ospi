@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2012 by Pierre Marchand   *
- *   pierremarc@oep-h.com   *
+ *   pierre@oep-h.com   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,50 +18,48 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <podofo/podofo.h>
-#include <iostream>
+
+#ifndef OSPI_PLANPARAMS_H
+#define OSPI_PLANPARAMS_H
+
 #include <map>
-#include <boost/foreach.hpp>
+#include <string>
+#include <boost/lexical_cast.hpp>
 
-#include "ResourceCollection.h"
-#include "SourcePage.h"
-#include "PlanReader.h"
-
-
-int main(int ac, char ** av)
-{
-//	ospi::ResourceCollection rc;
-//	PoDoFo::PdfMemDocument targetDoc;
-
-//	for(int d(1); d < ac; ++d)
-//	{
-//		PoDoFo::PdfMemDocument doc(av[d]);
-//		int pc(doc.GetPageCount());
-//		for(int i(0); i < pc; ++i)
-//		{
-//			PoDoFo::PdfPage* p(doc.GetPage(i));
-//			std::cerr<<"Page ("<<d<<")"<<(i+1)<<std::endl;
-//			ospi::SourcePage sp(&doc, i);
-//			sp.setDoc(&targetDoc);
-//			sp.setPage(targetDoc.CreatePage(p->GetMediaBox()));
-
-//			sp.commit();
-//		}
-//	}
-//	targetDoc.SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
-//	targetDoc.Write("test.pdf");
-
-	std::string plan(av[1]);
-	std::string reader(av[2]);
-
-	ospi::PlanParams params;
-	for(int i(3); i < ac; ++i)
+namespace ospi {
+	
+	class PlanParams
 	{
-		params.Add(std::string(av[i]));
-	}
+		protected:
+			std::map<std::string, std::string> pData;
 
-	ospi::PlanReaderFactory::Impose(reader, plan, params);
+		public:
+			PlanParams();
+			void Add(const std::string& paramstring);
+			bool Has(const std::string& key) const;
 
-	return 0;
-}
+			template <class T>
+			T Get(const std::string& key, const T& d) const
+			{
+				T ret;
+				try
+				{
+					ret = boost::lexical_cast<T>(pData.find(key)->second);
+				}
+				catch(...)
+				{
+					ret = d;
+				}
+				return ret;
+			}
 
+
+			void Remove(const std::string& key);
+			void Clear(){pData.clear();}
+
+
+	};
+	
+} // namespace ospi
+
+#endif // OSPI_PLANPARAMS_H

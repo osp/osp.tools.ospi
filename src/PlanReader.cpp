@@ -24,11 +24,6 @@
 #include "SimplePlanReader.h"
 
 namespace ospi {
-	
-	PlanReader::PlanReader(const std::string& plan)
-		: planPath(plan)
-	{
-	}
 
 	PlanReaderFactory * PlanReaderFactory::instance = NULL;
 	PlanReaderFactory::PlanReaderFactory()
@@ -36,14 +31,14 @@ namespace ospi {
 		creators[std::string("simple")] = CreatorPtr(new SimplePlanReaderCreator);
 	}
 
-	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan)
+	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan, const PlanParams &params)
 	{
 		if(instance == NULL)
 			instance = new PlanReaderFactory;
 		if(instance->creators.find(readerTS) == instance->creators.end())
 			return -1;
 
-		PlanReaderPtr preader(instance->creators[readerTS]->Create(plan));
+		PlanReaderPtr preader(instance->creators[readerTS]->Create(plan, params));
 		preader->Impose();
 	}
 	

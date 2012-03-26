@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (C) 2012 by Pierre Marchand   *
- *   pierremarc@oep-h.com   *
+ *   pierre@oep-h.com   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -18,50 +18,37 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#include <podofo/podofo.h>
-#include <iostream>
-#include <map>
-#include <boost/foreach.hpp>
+#include "PlanParams.h"
 
-#include "ResourceCollection.h"
-#include "SourcePage.h"
-#include "PlanReader.h"
+#include <vector>
 
+#include <boost/algorithm/string.hpp>
 
-int main(int ac, char ** av)
-{
-//	ospi::ResourceCollection rc;
-//	PoDoFo::PdfMemDocument targetDoc;
-
-//	for(int d(1); d < ac; ++d)
-//	{
-//		PoDoFo::PdfMemDocument doc(av[d]);
-//		int pc(doc.GetPageCount());
-//		for(int i(0); i < pc; ++i)
-//		{
-//			PoDoFo::PdfPage* p(doc.GetPage(i));
-//			std::cerr<<"Page ("<<d<<")"<<(i+1)<<std::endl;
-//			ospi::SourcePage sp(&doc, i);
-//			sp.setDoc(&targetDoc);
-//			sp.setPage(targetDoc.CreatePage(p->GetMediaBox()));
-
-//			sp.commit();
-//		}
-//	}
-//	targetDoc.SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
-//	targetDoc.Write("test.pdf");
-
-	std::string plan(av[1]);
-	std::string reader(av[2]);
-
-	ospi::PlanParams params;
-	for(int i(3); i < ac; ++i)
+namespace ospi {
+	
+	PlanParams::PlanParams()
 	{
-		params.Add(std::string(av[i]));
 	}
 
-	ospi::PlanReaderFactory::Impose(reader, plan, params);
+	void PlanParams::Add(const std::string &paramstring)
+	{
+		std::vector<std::string> res;
+		boost::algorithm::split( res, paramstring, boost::algorithm::is_any_of("="), boost::algorithm::token_compress_on );
+		if(res.size() > 1)
+			pData[res.at(0)] = res.at(1);
+	}
 
-	return 0;
-}
+	bool PlanParams::Has(const std::string &key) const
+	{
+		if(pData.find(key) != pData.end())
+			return true;
+		return false;
+	}
 
+	void PlanParams::Remove(const std::string &key)
+	{
+		pData.erase(key);
+	}
+
+	
+} // namespace ospi

@@ -32,8 +32,11 @@
 
 namespace ospi {
 
-	SimplePlanReader::SimplePlanReader(const std::string &plan)
-		:PlanReader(plan)
+	const std::string SimplePlanReader::InputKW = std::string("INPUT");
+	const std::string SimplePlanReader::OutputKW = std::string("OUTPUT");
+
+	SimplePlanReader::SimplePlanReader(const std::string& plan, const PlanParams& params)
+		:planPath(plan), params(params)
 	{
 	}
 
@@ -49,6 +52,16 @@ namespace ospi {
 		double a,b,c,d,e,f;
 
 		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> tpagewidth >> tpageheight >> a >> b >> c >> d >> e >> f;
+		if(params.Has(InputKW))
+		{
+			if(sdoc == InputKW)
+				sdoc = params.Get(InputKW, std::string());
+		}
+		if(params.Has(OutputKW))
+		{
+			if(tdoc == OutputKW)
+				tdoc = params.Get(OutputKW, std::string());
+		}
 		if(sdocuments.find(sdoc) == sdocuments.end())
 		{
 			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument(sdoc.c_str()));

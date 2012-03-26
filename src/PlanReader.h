@@ -28,6 +28,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "SourcePage.h"
+#include "PlanParams.h"
 
 namespace ospi {
 	
@@ -35,9 +36,7 @@ namespace ospi {
 	{
 		protected:
 			PlanReader(){}
-			std::string planPath;
 		public:
-			PlanReader(const std::string& plan);
 			virtual ~PlanReader(){}
 			virtual int Impose() = 0;
 
@@ -55,7 +54,7 @@ namespace ospi {
 				public:
 					Creator(){}
 					virtual ~Creator(){}
-					virtual PlanReaderPtr Create(const std::string& plan) = 0;
+					virtual PlanReaderPtr Create(const std::string& plan, const PlanParams& params) = 0;
 			};
 
 		protected:
@@ -66,7 +65,7 @@ namespace ospi {
 			std::map<std::string, CreatorPtr> creators;
 
 		public:
-			static int Impose(const std::string& readerTS, const std::string& plan);
+			static int Impose(const std::string& readerTS, const std::string& plan, const PlanParams& params);
 
 	};
 	

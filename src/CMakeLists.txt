@@ -4,6 +4,7 @@ SET(OSPI_READERS
 
 SET(OSPI_SRCS
 	main.cpp
+	PlanParams.cpp
 	PlanReader.cpp
 	ResourceCollection.cpp
 	SourcePage.cpp

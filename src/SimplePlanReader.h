@@ -40,14 +40,21 @@ namespace ospi {
 			typedef boost::shared_ptr<SourcePage> SourcePagePtr;
 			typedef boost::shared_ptr<PoDoFo::PdfMemDocument> DocumentPtr;
 			typedef std::pair<std::string, DocumentPtr> DocInfoKey;
+
+			std::string planPath;
+			PlanParams params;
+
 			std::vector<SourcePagePtr> spages;
 			std::map<std::string, DocumentPtr> sdocuments;
 			std::map<std::string, DocumentPtr> tdocuments;
 
+			static const std::string InputKW;
+			static const std::string OutputKW;
+
 			void readRecord(const std::string& rec);
 
 		public:
-			SimplePlanReader(const std::string& plan);
+			SimplePlanReader(const std::string& plan, const PlanParams& params);
 
 			int Impose();
 	};
@@ -55,9 +62,9 @@ namespace ospi {
 	class SimplePlanReaderCreator : public PlanReaderFactory::Creator
 	{
 		public:
-			PlanReaderPtr Create(const std::string& plan)
+			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
 			{
-				return PlanReaderPtr(new SimplePlanReader(plan));
+				return PlanReaderPtr(new SimplePlanReader(plan,params));
 			}
 	};
 	
