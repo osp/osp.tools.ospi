@@ -59,8 +59,6 @@ namespace ospi {
 	
 	ResourceCollection::ResourceCollection()
 	{
-//		boost::uuids::uuid u = boost::uuids::random_generator()();
-//		int s = u.size();
 	}
 
 	ResourceCollection* ResourceCollection::that()
@@ -70,53 +68,67 @@ namespace ospi {
 		return instance;
 	}
 
-	bool ResourceCollection::resExist(const Resource &r)
-	{
-		if(pResDict.find(r.first) == pResDict.end())
-			return false;
-		const ObjVect& ov(pResDict.find(r.first)->second);
-		if(std::find(ov.begin(), ov.end(), r.second) == ov.end())
-			return false;
+//	bool ResourceCollection::resExist(const Resource &r)
+//	{
+//		if(pResDict.find(r.first) == pResDict.end())
+//			return false;
+//		const ObjVect& ov(pResDict.find(r.first)->second);
+//		if(std::find(ov.begin(), ov.end(), r.second) == ov.end())
+//			return false;
 
-		return true;
-	}
+//		return true;
+//	}
 
-	unsigned int ResourceCollection::Add(const Resource &res)
+	unsigned int ResourceCollection::Add(const Resource &sres, const Resource &tres)
 	{
-		if(that()->resExist(res))
-			return 1;
-		that()->pResDict[res.first].push_back(res.second);
+		ResourceKey key(sres);
+		ControlMap& cm(that()->tDocReg[tres.first]);
+		if(cm.find(key) == cm.end())
+		{
+			cm[key] = tres.second;
+		}
 
 		return 1;
 	}
 
-	void ResourceCollection::BeginDoc(PoDoFo::PdfDocument *tdoc)
-	{
-//		if(that()->tDocReg.find(doc) != that()->tDocReg.end())
-//		{
-//			const ObjVect& ov(that()->tDocReg.find(tdoc));
-//			ov.clear();
-//		}
-		that()->tDocReg[tdoc].clear();
-	}
-
-	const PoDoFo::PdfReference& ResourceCollection::ToDoc(PoDoFo::PdfDocument *tdoc, const Resource &res)
+	bool ResourceCollection::Has(PoDoFo::PdfDocument *tdoc, const Resource& res)
 	{
 		ResourceKey key(res);
 		ControlMap& cm(that()->tDocReg[tdoc]);
-
-		// If the object referenced by the res key has already been inserted in the target document, just return a reference to it;
-		if(cm.find(key) != cm.end())
-		{
-			PoDoFo::PdfObject * o = cm[key];
-			return o->Reference();
-		}
-
-		// otherwise, actually recreate this object in target document
-		PoDoFo::PdfObject * obj = tdoc->GetObjects()->CreateObject(*res.second);
-		cm[key] = obj;
-		return obj->Reference();
+		return (cm.find(key) != cm.end());
 	}
+
+	PoDoFo::PdfObject * ResourceCollection::Get(PoDoFo::PdfDocument *tdoc, const Resource& res)
+	{
+		ResourceKey key(res);
+		ControlMap& cm(that()->tDocReg[tdoc]);
+		if(cm.find(key) != cm.end())
+			return cm[key];
+		throw PoDoFo::ePdfError_NoObject;
+	}
+
+	void ResourceCollection::BeginDoc(PoDoFo::PdfDocument *tdoc)
+	{
+		that()->tDocReg[tdoc].clear();
+	}
+
+//	const PoDoFo::PdfReference& ResourceCollection::ToDoc(PoDoFo::PdfDocument *tdoc, const Resource &res)
+//	{
+//		ResourceKey key(res);
+//		ControlMap& cm(that()->tDocReg[tdoc]);
+
+//		// If the object referenced by the res key has already been inserted in the target document, just return a reference to it;
+//		if(cm.find(key) != cm.end())
+//		{
+//			PoDoFo::PdfObject * o = cm[key];
+//			return o->Reference();
+//		}
+
+//		// otherwise, actually recreate this object in target document
+//		PoDoFo::PdfObject * obj = tdoc->GetObjects()->CreateObject(*res.second);
+//		cm[key] = obj;
+//		return obj->Reference();
+//	}
 
 
 	

@@ -19,56 +19,13 @@
  ***************************************************************************/
 
 
-#include "Transform.h"
-
-#include <sstream>
-#include <cmath>
+#include "PlanReader.h"
 
 namespace ospi {
-
-	Transform Transform::fromString(const std::string &tm)
+	
+	PlanReader::PlanReader(const std::string& plan)
+		: planPath(plan)
 	{
-		// TODO - if found useful
-		return Transform();
-	}
-
-	std::string Transform::toCMString() const
-	{
-		std::ostringstream buffer;
-		buffer << std::fixed
-		       << a << ' '
-		       << b << ' '
-		       << c << ' '
-		       << d << ' '
-		       << e << ' '
-		       << f << ' '
-		       << "cm\n";
-		return buffer.str();
-	}
-
-	Transform& Transform::scale(double sx, double sy)
-	{
-		a *= sx;
-		d *= sy;
-		return (*this);
-	}
-
-	Transform& Transform::translate(double dx, double dy)
-	{
-		e += dx;
-		f += dy;
-		return (*this);
-	}
-
-	Transform& Transform::rotate(double r)
-	{
-		double cosR = cos(r * 3.14159 / 180.0);
-		double sinR = sin(r * 3.14159 / 180.0);
-
-		a *= cosR;
-		b = sinR;
-		c = -sinR;
-		b *= cosR;
 	}
 	
 } // namespace ospi

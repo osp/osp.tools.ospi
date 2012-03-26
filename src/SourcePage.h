@@ -52,10 +52,10 @@ namespace ospi {
 			// placeholder
 			PoDoFo::PdfDocument * targetDoc;
 
-			// target page number
-			unsigned int targetPage;
+			// target page
+			PoDoFo::PdfPage * targetPage;
 
-			// page instance as xobject in target document
+			// source page instance as xobject in target document
 			PoDoFo::PdfXObject * xobj;
 
 			// An identifier in a resource collection
@@ -64,6 +64,7 @@ namespace ospi {
 			// return a <type, object> pair for a resource name
 			PdfResource getNamedResource(const PoDoFo::PdfName &rname) const;
 
+			bool migratable(const PoDoFo::PdfObject *o) const;
 			PoDoFo::PdfObject* migrate(PoDoFo::PdfObject* obj);
 			void writeResource(const PoDoFo::PdfName &rname, const PdfResource &r);
 
@@ -74,12 +75,12 @@ namespace ospi {
 
 			void setTransform(const Transform& t){targetTransform = t;}
 			void setDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
-			void setPage(unsigned int p){targetPage = p;}
+			void setPage(PoDoFo::PdfPage * p){targetPage = p;}
 			void setResource(unsigned int r){resourceIndex = r;}
 
-			Transform getTransform() const {return targetTransform;}
+			Transform& getTransform() const {return targetTransform;}
 			PoDoFo::PdfDocument * getDoc() const {return targetDoc;}
-			unsigned int getPage() const {return targetPage;}
+			PoDoFo::PdfPage * getPage() const {return targetPage;}
 			unsigned int getResource() const {return resourceIndex;}
 
 			// parse content stream and get required resources from source document

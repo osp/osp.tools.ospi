@@ -50,8 +50,13 @@ namespace ospi {
 
 			~Transform(){}
 
+
+			Transform& translate(double dx, double dy);
+			Transform& rotate(double r);
+			Transform& scale(double sx, double sy);
+
 			static Transform fromString(const std::string& tm);
-			std::string toString() const;
+			std::string toCMString() const;
 
 	};
 	

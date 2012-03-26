@@ -19,56 +19,59 @@
  ***************************************************************************/
 
 
-#include "Transform.h"
+#include "SimplePlanReader.h"
 
+#include <fstream>
+#include <istream>
 #include <sstream>
-#include <cmath>
+#include <exception>
+
+#define OSPI_MAX_RECORD_SIZE 1024
 
 namespace ospi {
-
-	Transform Transform::fromString(const std::string &tm)
+	
+	SimplePlanReader::SimplePlanReader(const std::string &plan)
+		:PlanReader(plan)
 	{
-		// TODO - if found useful
-		return Transform();
 	}
 
-	std::string Transform::toCMString() const
+	void SimplePlanReader::readRecord(const std::string &rec)
 	{
-		std::ostringstream buffer;
-		buffer << std::fixed
-		       << a << ' '
-		       << b << ' '
-		       << c << ' '
-		       << d << ' '
-		       << e << ' '
-		       << f << ' '
-		       << "cm\n";
-		return buffer.str();
+		std::stringstream stream(std::stringstream::in | std::stringstream::out);
+		stream << rec;
+		std::string sdoc;
+		std::string tdoc;
+		unsigned int spagenumber;
+		unsigned int tpagenumber;
+		double tpagewidth, tpageheight;
+		double a,b,c,d,e,f;
+
+		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> a >> b >> c >> d >> e >> f;
+		if(sdocuments.find(sdoc) == sdocuments.end())
+		{
+			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+			sdocuments[sdoc] = DocumentPtr(d);
+		}
+		DocumentPtr sdocptr(sdocuments[sdoc]);
+		SourcePagePtr sp(new SourcePage(sdocptr, spagenumber));
+
 	}
 
-	Transform& Transform::scale(double sx, double sy)
+	int SimplePlanReader::Impose()
 	{
-		a *= sx;
-		d *= sy;
-		return (*this);
-	}
-
-	Transform& Transform::translate(double dx, double dy)
-	{
-		e += dx;
-		f += dy;
-		return (*this);
-	}
-
-	Transform& Transform::rotate(double r)
-	{
-		double cosR = cos(r * 3.14159 / 180.0);
-		double sinR = sin(r * 3.14159 / 180.0);
-
-		a *= cosR;
-		b = sinR;
-		c = -sinR;
-		b *= cosR;
+		std::ifstream in ( plan.c_str(), std::ifstream::in );
+		if ( !in.good() )
+			throw std::runtime_error ( "Failed to open plan file" );
+		char cbuffer[MAX_RECORD_SIZE];
+		int blen (0);
+		do
+		{
+			in.getline ( cbuffer, MAX_RECORD_SIZE );
+			blen = in.gcount() ;
+			std::string buffer ( cbuffer, blen );
+			readRecord(buffer);
+		}
+		while(!in.eof());
 	}
 	
 } // namespace ospi

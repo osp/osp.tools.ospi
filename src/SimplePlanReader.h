@@ -19,56 +19,31 @@
  ***************************************************************************/
 
 
-#include "Transform.h"
+#ifndef OSPI_SIMPLEPLANREADER_H
+#define OSPI_SIMPLEPLANREADER_H
 
-#include <sstream>
-#include <cmath>
+#include "PlanReader.h"
+
+#include <boost/shared_ptr.hpp>
 
 namespace ospi {
-
-	Transform Transform::fromString(const std::string &tm)
+	
+	class SimplePlanReader : public PlanReader
 	{
-		// TODO - if found useful
-		return Transform();
-	}
+		protected:
+			typedef boost::shared_ptr<SourcePage> SourcePagePtr;
+			typedef boost::shared_ptr<PoDoFo::PdfMemDocument> DocumentPtr;
+			std::vector<SourcePagePtr> spages;
+			std::map<std::string, DocumentPtr> documents;
 
-	std::string Transform::toCMString() const
-	{
-		std::ostringstream buffer;
-		buffer << std::fixed
-		       << a << ' '
-		       << b << ' '
-		       << c << ' '
-		       << d << ' '
-		       << e << ' '
-		       << f << ' '
-		       << "cm\n";
-		return buffer.str();
-	}
+			void readRecord(const std::string& rec);
 
-	Transform& Transform::scale(double sx, double sy)
-	{
-		a *= sx;
-		d *= sy;
-		return (*this);
-	}
+		public:
+			SimplePlanReader(const std::string& plan);
 
-	Transform& Transform::translate(double dx, double dy)
-	{
-		e += dx;
-		f += dy;
-		return (*this);
-	}
-
-	Transform& Transform::rotate(double r)
-	{
-		double cosR = cos(r * 3.14159 / 180.0);
-		double sinR = sin(r * 3.14159 / 180.0);
-
-		a *= cosR;
-		b = sinR;
-		c = -sinR;
-		b *= cosR;
-	}
+			int Impose();
+	};
 	
 } // namespace ospi
+
+#endif // OSPI_SIMPLEPLANREADER_H

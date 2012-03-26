@@ -56,21 +56,23 @@ namespace ospi {
 			static ResourceCollection* instance;
 			static ResourceCollection* that();
 
-			ResDict pResDict;
+//			ResDict pResDict;
 			std::map<PoDoFo::PdfDocument*, ControlMap> tDocReg;
 
-			bool resExist(const Resource& r);
+//			bool resExist(const Resource& r);
 
 		public:
 			/*
 			  Insert an object to the collection.
 			  will possibly return an identifier for this resource
 			*/
-			static unsigned int Add(const Resource& res);
+			static unsigned int Add(const Resource& res, const Resource &tres);
+			static bool Has(PoDoFo::PdfDocument *tdoc, const Resource& res);
+			static PoDoFo::PdfObject *Get(PoDoFo::PdfDocument *tdoc, const Resource &res);
 
 			static void BeginDoc(PoDoFo::PdfDocument* tdoc);
 //			static void EndDoc(PoDoFo::PdfDocument* tdoc);
-			static const PoDoFo::PdfReference &ToDoc(PoDoFo::PdfDocument* tdoc, const Resource& res);
+//			static const PoDoFo::PdfReference &ToDoc(PoDoFo::PdfDocument* tdoc, const Resource& res);
 	};
 	
 } // namespace ospi

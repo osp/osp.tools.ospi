@@ -25,11 +25,13 @@
 #include <boost/foreach.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <set>
+#include <ostream>
 
 namespace ospi {
 	
@@ -74,7 +76,11 @@ namespace ospi {
 			{
 				if(pres.HasKey(t))
 				{
-					PoDoFo::PdfDictionary& tdict(pres.GetKey(t)->GetDictionary());
+
+					PoDoFo::PdfObject * o(pres.GetKey(t));
+					if(o->IsReference())
+						o = sourceDoc->GetObjects()->GetObject(o->GetReference());
+					PoDoFo::PdfDictionary& tdict(o->GetDictionary());
 					if(tdict.HasKey(rname))
 						return PdfResource(t, tdict.GetKey(rname));
 				}
@@ -107,7 +113,14 @@ namespace ospi {
 		std::string errMessage("[SourcePage::getNamedResource] Missing named resource : /");
 		errMessage.append(rname.GetName());
 		 throw std::runtime_error(errMessage);
-//		std::cerr<<errMessage<<std::endl;
+//		//std::cerr<<errMessage<<std::endl;
+	}
+
+	bool SourcePage::migratable(const PoDoFo::PdfObject *o) const
+	{
+		if(o->IsDictionary() || o->IsArray() || o->IsReference())
+			return true;
+		return false;
 	}
 
 	PoDoFo::PdfObject * SourcePage::migrate(PoDoFo::PdfObject *obj)
@@ -116,19 +129,28 @@ namespace ospi {
 
 		if ( obj->IsDictionary() )
 		{
-			ret = targetDoc->GetObjects()->CreateObject ( *obj );
+			PoDoFo::PdfObject * o(targetDoc->GetObjects()->CreateObject(obj->GetDataTypeString()));
+			o->GetDictionary().RemoveKey(PoDoFo::PdfName::KeyType);
 
 			PoDoFo::TKeyMap resmap = obj->GetDictionary().GetKeys();
 			for ( PoDoFo::TCIKeyMap itres = resmap.begin(); itres != resmap.end(); ++itres )
 			{
-				PoDoFo::PdfObject *o = itres->second;
-				ret->GetDictionary().AddKey ( itres->first , migrate( o ));
+				//std::cerr<<"Migrate "<<itres->first.GetName()<<std::endl;
+				if(migratable(itres->second))
+					o->GetDictionary().AddKey ( itres->first , migrate( itres->second ));
+				else
+					o->GetDictionary().AddKey (itres->first , itres->second);
 			}
 
 			if ( obj->HasStream() )
 			{
-				* ( ret->GetStream() ) = * ( obj->GetStream() );
+				PoDoFo::PdfStream * tstream(o->GetStream());
+				PoDoFo::PdfStream * sstream(obj->GetStream());
+				*tstream = *sstream;
+				ret = targetDoc->GetObjects()->CreateObject(o->Reference());
 			}
+			else
+				ret = o;
 
 		}
 		else if ( obj->IsArray() )
@@ -137,41 +159,72 @@ namespace ospi {
 			PoDoFo::PdfArray narray;
 			for ( unsigned int ci = 0; ci < carray.GetSize(); ++ci )
 			{
-				PoDoFo::PdfObject *co ( migrate( &carray[ci] ) );
-				narray.push_back ( *co );
+				if(migratable(&carray[ci]))
+				{
+					PoDoFo::PdfObject * o(migrate(&carray[ci]));
+					narray.push_back(*o);
+				}
+				else
+					narray.push_back(PoDoFo::PdfVariant(carray[ci]));
 			}
-			ret = targetDoc->GetObjects()->CreateObject ( narray );
+			ret = targetDoc->GetObjects()->CreateObject(narray);
 		}
 		else if ( obj->IsReference() )
 		{
-//			PdfObject * o ( migrateResource ( sourceDoc->GetObjects().GetObject ( obj->GetReference() ) ) );
-//                        ret  = new PdfObject ( o->Reference() ) ;
-			PoDoFo::PdfReference rr( ResourceCollection::ToDoc(targetDoc, ResourceCollection::Resource(sourceDoc, obj)));
-			ret = new PoDoFo::PdfObject ( rr );
+			ResourceCollection::Resource sres(sourceDoc, obj);
+			if(ResourceCollection::Has(targetDoc, sres))
+			{
+				PoDoFo::PdfObject * o(ResourceCollection::Get(targetDoc, sres));
+				ret = o;
+			}
+			else
+			{
+				PoDoFo::PdfObject * o (migrate(sourceDoc->GetObjects()->GetObject(obj->GetReference())));
+				ResourceCollection::Add(sres, ResourceCollection::Resource(targetDoc, o));
+				ret = o;
+			}
 		}
 		else
 		{
-			ret = new PoDoFo::PdfObject ( *obj );//targetDoc->GetObjects().CreateObject(*obj);
+			ret = new PoDoFo::PdfObject(*obj);
 		}
 		return ret;
 	}
 
 	void SourcePage::writeResource(const PoDoFo::PdfName& rname, const PdfResource &r)
 	{
+		//std::cerr<<"\n+++++++++++++++++++++++++++++++++++++++++++++++\nwriteResource: " << rname.GetName() <<std::endl;
 		if(!xobj)
 			throw std::logic_error("[SourcePage::writeResource] No XObject");
-		PoDoFo::PdfDictionary& rdict(xobj->GetResources()->GetDictionary());
+
+
+		PoDoFo::PdfObject* rdict = NULL;
 		PoDoFo::PdfObject * tdict = NULL;
 
-		if(!rdict.HasKey(r.first))
+		if(!xobj->GetObject()->GetDictionary().HasKey(PoDoFo::PdfName("Resources")))
 		{
-			tdict = new PoDoFo::PdfObject( PoDoFo::PdfDictionary() );
-			rdict.AddKey(r.first, tdict);
+//			rdict = new PoDoFo::PdfObject( PoDoFo::PdfDictionary() );
+			xobj->GetObject()->GetDictionary().AddKey(PoDoFo::PdfName("Resources"), PoDoFo::PdfObject( PoDoFo::PdfDictionary() ));
 		}
-		else
-			tdict = rdict.GetKey(r.first);
+		rdict = xobj->GetObject()->GetDictionary().GetKey(PoDoFo::PdfName("Resources"));
 
-		tdict->GetDictionary().AddKey(rname, migrate(r.second));
+		if(!rdict->GetDictionary().HasKey(r.first))
+		{
+//			tdict = new PoDoFo::PdfObject( PoDoFo::PdfDictionary() );
+			rdict->GetDictionary().AddKey(r.first, PoDoFo::PdfObject( PoDoFo::PdfDictionary() ));
+		}
+		tdict = rdict->GetDictionary().GetKey(r.first);
+
+		PoDoFo::PdfObject * mr(migrate(r.second));
+		tdict->GetDictionary().AddKey(rname, mr);
+
+//		tdict->GetDictionary().SetDirty(true);
+//		rdict->GetDictionary().SetDirty(true);
+//		xobj->GetObject()->GetDictionary().SetDirty(true);
+
+//		std::string dbg;
+//		tdict->ToString(dbg);
+		//std::cerr<<dbg<<"\n+++++++++++++++++++++++++++++++++++++++++++++++\n"<<std::endl;
 	}
 
 	void SourcePage::extractResource()
@@ -258,16 +311,26 @@ namespace ospi {
 						foundNames.insert(curName);
 						try
 						{
+							std::string dbg;
+
+//							xobj->GetObject()->ToString(dbg);
+//							//std::cerr<<"BEFORE =================================================================================================================="<<std::endl;
+//							//std::cerr<<dbg<<std::endl;
+
 							PdfResource res(getNamedResource(curName));
 							writeResource(curName, res);
+
+//							xobj->GetObject()->ToString(dbg);
+//							//std::cerr<<"AFTER ==================================================================================================================="<<std::endl;
+//							//std::cerr<<dbg<<std::endl;
 
 						}
 						catch(std::runtime_error & e)
 						{
-							std::cerr<<e.what()<<std::endl;
+							//std::cerr<<e.what()<<std::endl;
 						}
 
-//						std::cerr<< res.first.GetName()<< " => " <<var.GetName().GetName()<<std::endl;
+//						//std::cerr<< res.first.GetName()<< " => " <<var.GetName().GetName()<<std::endl;
 					}
 				}
 			}
@@ -305,13 +368,13 @@ namespace ospi {
 				}
 				else if ( carray[ci].IsReference() )
 				{
-					PoDoFo::PdfObject *co = sourceDoc->GetObjects().GetObject ( carray[ci].GetReference() );
+					PoDoFo::PdfObject *co = sourceDoc->GetObjects()->GetObject ( carray[ci].GetReference() );
 
 					while ( co != NULL )
 					{
 						if ( co->IsReference() )
 						{
-							co = sourceDoc->GetObjects().GetObject ( co->GetReference() );
+							co = sourceDoc->GetObjects()->GetObject ( co->GetReference() );
 						}
 						else if ( co->HasStream() )
 						{
@@ -331,9 +394,9 @@ namespace ospi {
 		for ( itKey = pageKeys.begin(); itKey != pageKeys.end(); ++itKey )
 		{
 			PoDoFo::PdfName keyname ( *itKey );
-			if ( page->GetObject()->GetDictionary().HasKey ( keyname ) )
+			if ( pCachedPage->GetObject()->GetDictionary().HasKey ( keyname ) )
 			{
-				xobj->GetObject()->GetDictionary().AddKey ( keyname, migrateResource ( page->GetObject()->GetDictionary().GetKey ( keyname ) ) );
+				xobj->GetObject()->GetDictionary().AddKey ( keyname, migrate( pCachedPage->GetObject()->GetDictionary().GetKey ( keyname ) ) );
 			}
 		}
 
@@ -345,15 +408,22 @@ namespace ospi {
 		extractResource();
 
 		// Now put this object in target doc
-		PoDoFo::PdfPage * newpage;
-		if(targetDoc->GetPageCount() < targetPage)
+		std::string objname("OriginalPage");
+		objname.append(boost::lexical_cast<std::string>(sourcePage));
+		std::ostringstream buffer;
+		buffer << "q\n";
+		buffer << targetTransform.toCMString();
+		buffer << "/" << objname << " Do\n";
+		buffer << "Q\n";
+		std::string bufStr = buffer.str();
+		targetPage->GetContentsForAppending()->GetStream()->Set( bufStr.data(), bufStr.size() );
+		if(!targetPage->GetResources()->GetDictionary().HasKey(PoDoFo::PdfName("XObject")))
 		{
-			for(int i(targetDoc->GetPageCount()); i < targetPage; i++)
-			{
-				newpage = targetDoc->CreatePage ( PdfRect ( 0.0, 0.0, destWidth, destHeight ) );
-				++lastPlate;
-			}
+			PoDoFo::PdfObject* to = new PoDoFo::PdfObject(PoDoFo::PdfDictionary());
+			targetPage->GetResources()->GetDictionary().AddKey(PoDoFo::PdfName("XObject"), to);
 		}
+		targetPage->GetResources()->GetDictionary().GetKey(PoDoFo::PdfName("XObject"))->GetDictionary().AddKey(PoDoFo::PdfName(objname), xobj->GetObjectReference());
+
 	}
 	
 } // namespace ospi
