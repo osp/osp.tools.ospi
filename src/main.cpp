@@ -25,30 +25,37 @@
 
 #include "ResourceCollection.h"
 #include "SourcePage.h"
+#include "PlanReader.h"
 
 
 int main(int ac, char ** av)
 {
 //	ospi::ResourceCollection rc;
-	PoDoFo::PdfMemDocument targetDoc;
+//	PoDoFo::PdfMemDocument targetDoc;
 
-	for(int d(1); d < ac; ++d)
-	{
-		PoDoFo::PdfMemDocument doc(av[d]);
-		int pc(doc.GetPageCount());
-		for(int i(0); i < pc; ++i)
-		{
-			PoDoFo::PdfPage* p(doc.GetPage(i));
-			std::cerr<<"Page ("<<d<<")"<<(i+1)<<std::endl;
-			ospi::SourcePage sp(&doc, i);
-			sp.setDoc(&targetDoc);
-			sp.setPage(targetDoc.CreatePage(p->GetMediaBox()));
+//	for(int d(1); d < ac; ++d)
+//	{
+//		PoDoFo::PdfMemDocument doc(av[d]);
+//		int pc(doc.GetPageCount());
+//		for(int i(0); i < pc; ++i)
+//		{
+//			PoDoFo::PdfPage* p(doc.GetPage(i));
+//			std::cerr<<"Page ("<<d<<")"<<(i+1)<<std::endl;
+//			ospi::SourcePage sp(&doc, i);
+//			sp.setDoc(&targetDoc);
+//			sp.setPage(targetDoc.CreatePage(p->GetMediaBox()));
 
-			sp.commit();
-		}
-	}
-	targetDoc.SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
-	targetDoc.Write("test.pdf");
+//			sp.commit();
+//		}
+//	}
+//	targetDoc.SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
+//	targetDoc.Write("test.pdf");
+
+	std::string plan(av[1]);
+	std::string reader(av[2]);
+
+	ospi::PlanReaderFactory::Impose(reader, plan);
+
 	return 0;
 }
 

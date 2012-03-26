@@ -22,14 +22,16 @@
 #include "SimplePlanReader.h"
 
 #include <fstream>
-#include <istream>
+#include <iostream>
 #include <sstream>
-#include <exception>
+#include <stdexcept>
+
+#include <boost/foreach.hpp>
 
 #define OSPI_MAX_RECORD_SIZE 1024
 
 namespace ospi {
-	
+
 	SimplePlanReader::SimplePlanReader(const std::string &plan)
 		:PlanReader(plan)
 	{
@@ -46,32 +48,65 @@ namespace ospi {
 		double tpagewidth, tpageheight;
 		double a,b,c,d,e,f;
 
-		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> a >> b >> c >> d >> e >> f;
+		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> tpagewidth >> tpageheight >> a >> b >> c >> d >> e >> f;
 		if(sdocuments.find(sdoc) == sdocuments.end())
 		{
 			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
 			sdocuments[sdoc] = DocumentPtr(d);
 		}
 		DocumentPtr sdocptr(sdocuments[sdoc]);
-		SourcePagePtr sp(new SourcePage(sdocptr, spagenumber));
+		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
 
+		if(tdocuments.find(tdoc) == tdocuments.end())
+		{
+			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument);
+			tdocuments[tdoc] = DocumentPtr(d);
+		}
+		DocumentPtr tdocptr(sdocuments[tdoc]);
+		if(tdocptr->GetPageCount() < tpagenumber)
+		{
+			if(tdocptr->GetPageCount() == tpagenumber)
+				tdocptr->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight));
+			else
+				throw std::logic_error("Would need to create empty pages without knowing their geometry");
+		}
+		PoDoFo::PdfPage * tpage(tdocptr->GetPage(tpagenumber));
+		sp->setDoc(tdocptr.get());
+		sp->setTransform(Transform(a,b,c,d,e,f));
+		sp->setPage(tpage);
+
+		spages.push_back(sp);
 	}
 
 	int SimplePlanReader::Impose()
 	{
-		std::ifstream in ( plan.c_str(), std::ifstream::in );
+		std::ifstream in ( planPath.c_str(), std::ifstream::in );
 		if ( !in.good() )
 			throw std::runtime_error ( "Failed to open plan file" );
-		char cbuffer[MAX_RECORD_SIZE];
+		char cbuffer[OSPI_MAX_RECORD_SIZE];
 		int blen (0);
 		do
 		{
-			in.getline ( cbuffer, MAX_RECORD_SIZE );
+			in.getline ( cbuffer, OSPI_MAX_RECORD_SIZE );
 			blen = in.gcount() ;
 			std::string buffer ( cbuffer, blen );
 			readRecord(buffer);
 		}
 		while(!in.eof());
+
+		// Results
+		std::cerr<<"Documents: "<<tdocuments.size()<<std::endl;
+		std::cerr<<"Pages:" <<spages.size()<<std::endl;
+		BOOST_FOREACH(SourcePagePtr spp, spages)
+		{
+			spp->commit();
+		}
+		BOOST_FOREACH(DocInfoKey k, tdocuments)
+		{
+			k.second->SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
+			k.second->Write(k.first.c_str());
+		}
+
 	}
 	
 } // namespace ospi

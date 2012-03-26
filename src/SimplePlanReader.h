@@ -24,17 +24,25 @@
 
 #include "PlanReader.h"
 
-#include <boost/shared_ptr.hpp>
 
 namespace ospi {
-	
+
+	/**
+	  A reader for basic, verbose, imposition plan format.
+	  each line of the plan file represents a record of the form:
+	  source_document target_doc  source_page_number  target_page_number  target_page_width target_page_height a b c d e f;
+
+	  note: a b c d e f is the transformation matrix to apply to the page
+	  */
 	class SimplePlanReader : public PlanReader
 	{
 		protected:
 			typedef boost::shared_ptr<SourcePage> SourcePagePtr;
 			typedef boost::shared_ptr<PoDoFo::PdfMemDocument> DocumentPtr;
+			typedef std::pair<std::string, DocumentPtr> DocInfoKey;
 			std::vector<SourcePagePtr> spages;
-			std::map<std::string, DocumentPtr> documents;
+			std::map<std::string, DocumentPtr> sdocuments;
+			std::map<std::string, DocumentPtr> tdocuments;
 
 			void readRecord(const std::string& rec);
 
@@ -42,6 +50,15 @@ namespace ospi {
 			SimplePlanReader(const std::string& plan);
 
 			int Impose();
+	};
+
+	class SimplePlanReaderCreator : public PlanReaderFactory::Creator
+	{
+		public:
+			PlanReaderPtr Create(const std::string& plan)
+			{
+				return PlanReaderPtr(new SimplePlanReader(plan));
+			}
 	};
 	
 } // namespace ospi

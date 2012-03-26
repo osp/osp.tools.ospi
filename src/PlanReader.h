@@ -23,6 +23,10 @@
 #define OSPI_PLANREADER_H
 
 #include <string>
+#include <map>
+
+#include <boost/shared_ptr.hpp>
+
 #include "SourcePage.h"
 
 namespace ospi {
@@ -36,6 +40,33 @@ namespace ospi {
 			PlanReader(const std::string& plan);
 			virtual ~PlanReader(){}
 			virtual int Impose() = 0;
+
+
+	};
+	typedef boost::shared_ptr<PlanReader> PlanReaderPtr;
+
+
+
+	class PlanReaderFactory
+	{
+		public:
+			class Creator
+			{
+				public:
+					Creator(){}
+					virtual ~Creator(){}
+					virtual PlanReaderPtr Create(const std::string& plan) = 0;
+			};
+
+		protected:
+			PlanReaderFactory();
+			static PlanReaderFactory* instance;
+			typedef boost::shared_ptr<Creator> CreatorPtr;
+
+			std::map<std::string, CreatorPtr> creators;
+
+		public:
+			static int Impose(const std::string& readerTS, const std::string& plan);
 
 	};
 	

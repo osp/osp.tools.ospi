@@ -78,7 +78,7 @@ namespace ospi {
 			void setPage(PoDoFo::PdfPage * p){targetPage = p;}
 			void setResource(unsigned int r){resourceIndex = r;}
 
-			Transform& getTransform() const {return targetTransform;}
+			Transform getTransform() const {return targetTransform;}
 			PoDoFo::PdfDocument * getDoc() const {return targetDoc;}
 			PoDoFo::PdfPage * getPage() const {return targetPage;}
 			unsigned int getResource() const {return resourceIndex;}

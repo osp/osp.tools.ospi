@@ -1,8 +1,14 @@
+SET(OSPI_READERS
+	SimplePlanReader.cpp
+)
+
 SET(OSPI_SRCS
 	main.cpp
+	PlanReader.cpp
+	ResourceCollection.cpp
 	SourcePage.cpp
 	Transform.cpp
-	ResourceCollection.cpp
+	${OSPI_READERS}
 )
 
 INCLUDE_DIRECTORIES(
