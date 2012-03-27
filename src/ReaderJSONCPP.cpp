@@ -21,6 +21,7 @@
 
 #include "ReaderJSONCPP.h"
 
+#include <fstream>
 #include <stdexcept>
 
 #include <boost/foreach.hpp>
@@ -113,12 +114,24 @@ namespace ospi {
 
 	int ReaderJSONCPP::Impose()
 	{
+		std::ifstream in ( planPath.c_str(), std::ifstream::in );
+		if ( !in.good() )
+			throw std::runtime_error ( "Failed to open plan file" );
+
+		// How that's ugly
+		in.seekg (0, std::ios::end);
+		int length = in.tellg();
+		in.seekg (0, std::ios::beg);
+		boost::shared_ptr<char> buffer(new char [length]);
+		in.read(buffer.get(), length);
+		std::string jsondata(buffer.get(), length);
+
 		Json::Value root;
 		Json::Reader reader;
-		bool parsingSuccessful = reader.parse( planPath, root );
+		bool parsingSuccessful = reader.parse( jsondata, root );
 		if ( !parsingSuccessful )
 		{
-			throw std::runtime_error("Cant parse plan file (JSONCPP)");
+			throw std::runtime_error(reader.getFormattedErrorMessages());
 		}
 
 		std::string outputName;
@@ -144,6 +157,7 @@ namespace ospi {
 
 		tdocument->SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
 		tdocument->Write(outputName.append(".pdf").c_str());
+
 	}
 	
 } // namespace ospi
