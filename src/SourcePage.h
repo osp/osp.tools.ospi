@@ -49,6 +49,11 @@ namespace ospi {
 			// transformation to apply to the XObject
 			Transform targetTransform;
 
+			// Crop box (unscaled, just inserted as bbox to the XObject dictionary)
+			// defaults to the sourcepage Bleed box (following use cases presented in PDFRef1.4v3 p679)
+			// keeping the name cropbox for being agnostic
+			PoDoFo::PdfRect cropBox;
+
 			// placeholder
 			PoDoFo::PdfDocument * targetDoc;
 
@@ -74,11 +79,13 @@ namespace ospi {
 			SourcePage& operator= (const SourcePage& other);
 
 			void setTransform(const Transform& t){targetTransform = t;}
+			void setCrop(const PoDoFo::PdfRect& rect){cropBox = rect;}
 			void setDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
 			void setPage(PoDoFo::PdfPage * p){targetPage = p;}
 			void setResource(unsigned int r){resourceIndex = r;}
 
 			Transform getTransform() const {return targetTransform;}
+			PoDoFo::PdfRect getCrop(){return cropBox;}
 			PoDoFo::PdfDocument * getDoc() const {return targetDoc;}
 			PoDoFo::PdfPage * getPage() const {return targetPage;}
 			unsigned int getResource() const {return resourceIndex;}

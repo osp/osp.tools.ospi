@@ -352,6 +352,19 @@ namespace ospi {
 		pCachedPage = sourceDoc->GetPage(sourcePage);
 
 		xobj = new PoDoFo::PdfXObject ( pCachedPage->GetMediaBox(), targetDoc );
+		PoDoFo::PdfVariant bbox;
+		if(cropBox.GetBottom() != 0
+				|| cropBox.GetHeight() != 0
+				|| cropBox.GetLeft() != 0
+				|| cropBox.GetWidth() != 0)
+		{
+			cropBox.ToVariant(bbox);
+		}
+		else
+			pCachedPage->GetBleedBox().ToVariant(bbox);
+
+		xobj->GetObject()->GetDictionary().AddKey(PoDoFo::PdfName("BBox"), PoDoFo::PdfObject(bbox));
+
 		PoDoFo::PdfMemoryOutputStream outMemStream ( 1 );
 		if ( pCachedPage->GetContents()->HasStream() )
 		{
