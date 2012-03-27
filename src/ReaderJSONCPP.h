@@ -36,8 +36,9 @@ namespace ospi {
 
 			std::vector<SourcePagePtr> spages;
 			std::map<std::string, DocumentPtr> sdocuments;
-			std::map<std::string, DocumentPtr> tdocuments;
+			DocumentPtr tdocument;
 
+			static const std::string K_OutputRoot;
 			static const std::string K_Plan;
 			static const std::string K_TargetWidth;
 			static const std::string K_TargetHeight;
@@ -54,7 +55,9 @@ namespace ospi {
 			static const std::string K_CropTop;
 			static const std::string K_Rotation;
 
-			void readRecord(const Json::Value& rec);
+			void readPage(const Json::Value& page, unsigned int tpidx);
+			void readSlot(const Json::Value& slot, PoDoFo::PdfPage *tpage);
+
 		public:
 			ReaderJSONCPP(const std::string& plan, const PlanParams& params);
 			int Impose();

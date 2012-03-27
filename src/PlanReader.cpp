@@ -22,6 +22,7 @@
 #include "PlanReader.h"
 
 #include "SimplePlanReader.h"
+#include "ReaderJSONCPP.h"
 
 namespace ospi {
 
@@ -29,6 +30,7 @@ namespace ospi {
 	PlanReaderFactory::PlanReaderFactory()
 	{
 		creators[std::string("simple")] = CreatorPtr(new SimplePlanReaderCreator);
+		creators[std::string("json")] = CreatorPtr(new ReaderJSONCPPCreator);
 	}
 
 	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan, const PlanParams &params)

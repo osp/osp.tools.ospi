@@ -50,7 +50,7 @@ namespace ospi {
 
 			~Transform(){}
 
-
+			// In recomanded order: translate, rotate, scale [PDFRef1.4v3 p143]
 			Transform& translate(double dx, double dy);
 			Transform& rotate(double r);
 			Transform& scale(double sx, double sy);

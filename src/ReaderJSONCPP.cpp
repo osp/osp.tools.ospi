@@ -23,9 +23,12 @@
 
 #include <stdexcept>
 
+#include <boost/foreach.hpp>
+
 
 namespace ospi {
 
+	const std::string ReaderJSONCPP::K_OutputRoot = std::string("output_root_name");
 	const std::string ReaderJSONCPP::K_Plan = std::string("plan");
 	const std::string ReaderJSONCPP::K_TargetWidth = std::string("page_width");
 	const std::string ReaderJSONCPP::K_TargetHeight = std::string("page_height");
@@ -48,32 +51,99 @@ namespace ospi {
 
 	}
 
-	void ReaderJSONCPP::readRecord(const Json::Value &rec)
+	void ReaderJSONCPP::readPage(const Json::Value &page, unsigned int tpidx)
 	{
+		double tpagewidth(0);
+		double tpageheight(0);
+		tpagewidth = page.get(K_TargetWidth, tpagewidth).asDouble();
+		tpageheight = page.get(K_TargetHeight, tpageheight).asDouble();
+		if(tpagewidth <= 0.0 || tpageheight <= 0.0)
+			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
+
+		PoDoFo::PdfPage * pp(tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight)));
+
+		const Json::Value slots_(page[K_Slots]);
+		for (unsigned int index(0); index < slots_.size(); ++index )
+		{
+			Json::Value rec(slots_[index]);
+			readSlot(rec, pp);
+		}
+
+	}
+
+	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage)
+	{
+		// here we are!
 		std::string sdoc;
-		std::string tdoc;
-		unsigned int spagenumber(0);
-		unsigned int tpagenumber(0);
-		double tpagewidth(0), tpageheight(0);
-		double a(1),b(0),c(0),d(1),e(0),f(0);
-		rec.get()
+		unsigned int spagenumber;
+		double left, top, width, height;
+		double rotation;
+
+
+		sdoc = slot.get(K_SlotFile, sdoc).asString();
+		spagenumber = slot.get(K_SlotPage, 1).asInt() - 1; // to discuss with json providers whether we go natural counting or not.
+		if(sdocuments.find(sdoc) == sdocuments.end())
+		{
+			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+			sdocuments[sdoc] = DocumentPtr(d);
+		}
+		DocumentPtr sdocptr(sdocuments[sdoc]);
+		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
+		sp->setPage(tpage);
+		sp->setDoc(tdocument.get());
+
+		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
+		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
+
+		left = slot.get(K_SlotLeft, 0).asDouble();
+		top = slot.get(K_SlotTop, srect.GetHeight()).asDouble();
+		width = slot.get(K_SlotWidth,srect.GetWidth()).asDouble();
+		height = slot.get(K_SlotHeight, srect.GetHeight()).asDouble();
+		rotation = slot.get(K_Rotation, 0).asDouble();
+
+		Transform t;
+		t.translate(left, top - height);
+		t.rotate(rotation * 90.0);
+		t.scale(width / srect.GetWidth(), height / srect.GetHeight());
+
+		sp->setTransform(t);
+		spages.push_back(sp);
+
 	}
 
 	int ReaderJSONCPP::Impose()
 	{
-		Json::Value root;   // will contains the root value after parsing.
+		Json::Value root;
 		Json::Reader reader;
 		bool parsingSuccessful = reader.parse( planPath, root );
 		if ( !parsingSuccessful )
 		{
 			throw std::runtime_error("Cant parse plan file (JSONCPP)");
 		}
-		const Json::Value plan = root[K_Plan];
+
+		std::string outputName;
+		outputName = root.get(K_OutputRoot,outputName).asString();
+		if(outputName.empty())
+			throw std::runtime_error("Can't get output_root_name (JSONCPP)");
+
+		PoDoFo::PdfMemDocument * tdoc(new PoDoFo::PdfMemDocument);
+		tdocument = DocumentPtr(tdoc);
+
+
+		const Json::Value plan(root[K_Plan]);
 		for (unsigned int index(0); index < plan.size(); ++index )
 		{
 			Json::Value rec(plan[index]);
-			readRecord(rec);
+			readPage(rec, index);
 		}
+
+		BOOST_FOREACH(SourcePagePtr spp, spages)
+		{
+			spp->commit();
+		}
+
+		tdocument->SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
+		tdocument->Write(outputName.append(".pdf").c_str());
 	}
 	
 } // namespace ospi
