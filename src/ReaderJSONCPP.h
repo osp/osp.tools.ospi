@@ -19,22 +19,15 @@
  ***************************************************************************/
 
 
-#ifndef OSPI_SIMPLEPLANREADER_H
-#define OSPI_SIMPLEPLANREADER_H
+#ifndef OSPI_READERJSONCPP_H
+#define OSPI_READERJSONCPP_H
 
 #include "PlanReader.h"
-
+#include "json/json.h"
 
 namespace ospi {
-
-	/**
-	  A reader for basic, verbose, imposition plan format.
-	  each line of the plan file represents a record of the form:
-	  source_document target_doc  source_page_number  target_page_number  target_page_width target_page_height a b c d e f;
-
-	  note: a b c d e f is the transformation matrix to apply to the page
-	  */
-	class SimplePlanReader : public PlanReader
+	
+	class ReaderJSONCPP : public PlanReader
 	{
 		protected:
 
@@ -45,26 +38,36 @@ namespace ospi {
 			std::map<std::string, DocumentPtr> sdocuments;
 			std::map<std::string, DocumentPtr> tdocuments;
 
-			static const std::string InputKW;
-			static const std::string OutputKW;
+			static const std::string K_Plan;
+			static const std::string K_TargetWidth;
+			static const std::string K_TargetHeight;
+			static const std::string K_Slots;
+			static const std::string K_SlotWidth;
+			static const std::string K_SlotHeight;
+			static const std::string K_SlotLeft;
+			static const std::string K_SlotTop;
+			static const std::string K_SlotFile;
+			static const std::string K_SlotPage;
+			static const std::string K_CropWidth;
+			static const std::string K_CropHeight;
+			static const std::string K_CropLeft;
+			static const std::string K_CropTop;
+			static const std::string K_Rotation;
 
-			void readRecord(const std::string& rec);
-
+			void readRecord(const Json::Value& rec);
 		public:
-			SimplePlanReader(const std::string& plan, const PlanParams& params);
-
+			ReaderJSONCPP(const std::string& plan, const PlanParams& params);
 			int Impose();
 	};
 
-	class SimplePlanReaderCreator : public PlanReaderFactory::Creator
+	class ReaderJSONCPPCreator : public PlanReaderFactory::Creator
 	{
 		public:
 			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
 			{
-				return PlanReaderPtr(new SimplePlanReader(plan,params));
+				return PlanReaderPtr(new ReaderJSONCPP(plan,params));
 			}
 	};
-	
 } // namespace ospi
 
-#endif // OSPI_SIMPLEPLANREADER_H
+#endif // OSPI_READERJSONCPP_H

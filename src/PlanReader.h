@@ -35,6 +35,10 @@ namespace ospi {
 	class PlanReader
 	{
 		protected:
+			typedef boost::shared_ptr<SourcePage> SourcePagePtr;
+			typedef boost::shared_ptr<PoDoFo::PdfMemDocument> DocumentPtr;
+			typedef std::pair<std::string, DocumentPtr> DocInfoKey;
+
 			PlanReader(){}
 		public:
 			virtual ~PlanReader(){}
