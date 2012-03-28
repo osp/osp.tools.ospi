@@ -48,6 +48,9 @@ namespace ospi {
 			static const std::string K_SlotLeft;
 			static const std::string K_SlotTop;
 			static const std::string K_SlotFile;
+			static const std::string K_SlotRemoteFile;
+			static const std::string K_SlotRemoteFileURL;
+			static const std::string K_SlotRemoteFileType;
 			static const std::string K_SlotPage;
 			static const std::string K_CropWidth;
 			static const std::string K_CropHeight;
