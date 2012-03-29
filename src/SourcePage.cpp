@@ -26,6 +26,9 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -422,7 +425,7 @@ namespace ospi {
 
 		// Now put this object in target doc
 		std::string objname("OriginalPage");
-		objname.append(boost::lexical_cast<std::string>(sourcePage));
+		objname.append( boost::lexical_cast<std::string>(boost::uuids::random_generator()()));
 		std::ostringstream buffer;
 		buffer << "q\n";
 		buffer << targetTransform.toCMString()<<"\n";

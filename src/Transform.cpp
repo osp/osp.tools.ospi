@@ -22,7 +22,6 @@
 #include "Transform.h"
 
 #include <iostream>
-#include <sstream>
 #include <cmath>
 
 namespace ospi {
@@ -35,17 +34,7 @@ namespace ospi {
 
 	std::string Transform::toCMString() const
 	{
-		std::ostringstream buffer;
-		buffer.precision(5);
-		buffer << std::fixed
-		       << m.m(1,1) << ' '
-		       << m.m(1,2) << ' '
-		       << m.m(2,1) << ' '
-		       << m.m(2,2) << ' '
-		       << m.m(3,1) << ' '
-		       << m.m(3,2) << ' '
-		       << "cm";
-		return buffer.str();
+		return m.toString().append(" cm");
 	}
 
 	Transform& Transform::translate(double dx, double dy)
@@ -57,17 +46,43 @@ namespace ospi {
 		return (*this);
 	}
 
-	Transform& Transform::rotate(double r)
+	Transform& Transform::rotate(double r, const Point &origin)
 	{
 		double rGrad(r * 3.14159 / 180.0);
 		double cosR = cos(rGrad);
 		double sinR = sin(rGrad);
 		Matrix rotMat;
-		rotMat.m(1,1) = cosR;
-		rotMat.m(1,2) = -sinR;
-		rotMat.m(2,1) = sinR;
-		rotMat.m(2,2) = cosR;
+		if(!origin.IsOrigin())
+		{
+			Matrix tr1;
+			tr1.m(3,1) = -origin.x;
+			tr1.m(3,2) = -origin.y;
+			rotMat *= tr1;
+			std::cerr<<"\tTR1 "<< rotMat.toString()<<std::endl;
+
+			Matrix tr2;
+			tr2.m(1,1) = cosR;
+			tr2.m(1,2) = sinR;
+			tr2.m(2,1) = -sinR;
+			tr2.m(2,2) = cosR;
+			rotMat *= tr2;
+			std::cerr<<"\tTR2 "<< rotMat.toString()<<std::endl;
+
+			Matrix tr3;
+			tr3.m(3,1) = origin.x;
+			tr3.m(3,2) = origin.y;
+			rotMat *= tr3;
+			std::cerr<<"\tTR3 "<< rotMat.toString()<<std::endl;
+		}
+		else
+		{
+			rotMat.m(1,1) = cosR;
+			rotMat.m(1,2) = sinR;
+			rotMat.m(2,1) = -sinR;
+			rotMat.m(2,2) = cosR;
+		}
 		m *= rotMat;
+
 		return (*this);
 
 	}

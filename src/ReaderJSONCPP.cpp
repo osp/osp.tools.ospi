@@ -23,6 +23,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <cmath>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -145,12 +146,13 @@ namespace ospi {
 
 		Transform t;
 		std::cerr<<"========="<<std::endl;
+
 		std::cerr<<"translate = "<<left<<" "<< (tpage->GetMediaBox().GetHeight() - (top + height)) <<std::endl;
 		t.translate(left, tpage->GetMediaBox().GetHeight() - (top + height));
 		std::cerr<<t.toCMString()<<std::endl;
 
-		std::cerr<<"rotate = "<<(-rotation * 90.0)<<std::endl;
-		t.rotate(-rotation * 90.0);
+		std::cerr<<"rotate = "<<(abs((rotation * 90.0) - 360.0))<<std::endl;
+		t.rotate(abs((rotation * 90.0) - 360.0), ospi::Point(left, top));
 		std::cerr<<t.toCMString()<<std::endl;
 
 		t.scale(width / srect.GetWidth(), height / srect.GetHeight());

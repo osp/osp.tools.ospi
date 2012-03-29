@@ -24,8 +24,23 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace ospi {
+
+	class Point{
+		public:
+			double x;
+			double y;
+
+			Point():x(0),y(0){}
+			Point(double x, double y):x(x),y(y){}
+
+			bool IsOrigin() const
+			{
+				return ( x == 0.0 && y == 0.0);
+			}
+	};
 	
 	class Transform
 	{
@@ -88,6 +103,20 @@ namespace ospi {
 						(*this) = product;
 						return (*this);
 					}
+
+					std::string toString() const
+					{
+						std::ostringstream buffer;
+						buffer.precision(5);
+						buffer << std::fixed
+						       << m(1,1) << ' '
+						       << m(1,2) << ' '
+						       << m(2,1) << ' '
+						       << m(2,2) << ' '
+						       << m(3,1) << ' '
+						       << m(3,2);
+						return buffer.str();
+					}
 			};
 
 			Transform(){}
@@ -112,7 +141,7 @@ namespace ospi {
 
 			// In recomanded order: translate, rotate, scale [PDFRef1.4v3 p143]
 			Transform& translate(double dx, double dy);
-			Transform& rotate(double r);
+			Transform& rotate(double r, const Point& origin = Point());
 			Transform& scale(double sx, double sy);
 
 
