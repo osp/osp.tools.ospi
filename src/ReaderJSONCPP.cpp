@@ -26,6 +26,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 //#define WITH_CURL
 #ifdef WITH_CURL
@@ -73,6 +74,7 @@ namespace ospi {
 			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 
 		PoDoFo::PdfPage * pp(tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight)));
+		pp->GetContentsForAppending();
 
 		const Json::Value slots_(page[K_Slots]);
 		for (unsigned int index(0); index < slots_.size(); ++index )
@@ -94,6 +96,15 @@ namespace ospi {
 
 
 		sdoc = slot.get(K_SlotFile, sdoc).asString();
+		if(sdoc.empty())
+		{
+			Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
+			std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
+			std::vector<std::string> urlvec;
+			boost::algorithm::split( urlvec, rsdocurl, boost::algorithm::is_any_of("/"), boost::algorithm::token_compress_on );
+			sdoc = urlvec.back();
+
+		}
 		boost::filesystem3::path fp(sdoc.c_str());
 		if(!boost::filesystem3::exists(fp))
 		{
@@ -133,9 +144,19 @@ namespace ospi {
 		rotation = slot.get(K_Rotation, 0).asDouble();
 
 		Transform t;
+		std::cerr<<"========="<<std::endl;
+		std::cerr<<"translate = "<<left<<" "<< (tpage->GetMediaBox().GetHeight() - (top + height)) <<std::endl;
 		t.translate(left, tpage->GetMediaBox().GetHeight() - (top + height));
-		t.rotate(rotation * 90.0);
+		std::cerr<<t.toCMString()<<std::endl;
+
+		std::cerr<<"rotate = "<<(-rotation * 90.0)<<std::endl;
+		t.rotate(-rotation * 90.0);
+		std::cerr<<t.toCMString()<<std::endl;
+
 		t.scale(width / srect.GetWidth(), height / srect.GetHeight());
+		std::cerr<<"scale = "<< (width / srect.GetWidth())<<" "<< (height / srect.GetHeight())<<std::endl;
+		std::cerr<<t.toCMString()<<std::endl;
+
 		sp->setTransform(t);
 
 		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
@@ -175,7 +196,14 @@ namespace ospi {
 		std::string outputName;
 		outputName = root.get(K_OutputRoot,outputName).asString();
 		if(outputName.empty())
-			throw std::runtime_error("Can't get output_root_name (JSONCPP)");
+		{
+			if(params.Has(K_OutputRoot))
+			{
+				outputName = params.Get(K_OutputRoot, std::string());
+			}
+			if(outputName.empty())
+				throw std::runtime_error("Can't get output_root_name (JSONCPP)");
+		}
 
 		PoDoFo::PdfMemDocument * tdoc(new PoDoFo::PdfMemDocument);
 		tdocument = DocumentPtr(tdoc);

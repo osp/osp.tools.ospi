@@ -425,17 +425,23 @@ namespace ospi {
 		objname.append(boost::lexical_cast<std::string>(sourcePage));
 		std::ostringstream buffer;
 		buffer << "q\n";
-		buffer << targetTransform.toCMString();
+		buffer << targetTransform.toCMString()<<"\n";
 		buffer << "/" << objname << " Do\n";
 		buffer << "Q\n";
 		std::string bufStr = buffer.str();
-		targetPage->GetContentsForAppending()->GetStream()->Set( bufStr.data(), bufStr.size() );
+		PoDoFo::PdfObject* pageObject(targetPage->GetContentsForAppending());
+		PoDoFo::PdfStream * contentstream(pageObject->GetStream());
+		contentstream->BeginAppend(false);
+		contentstream->Append(bufStr.data(), bufStr.size() );
+		contentstream->EndAppend();
 		if(!targetPage->GetResources()->GetDictionary().HasKey(PoDoFo::PdfName("XObject")))
 		{
-			PoDoFo::PdfObject* to = new PoDoFo::PdfObject(PoDoFo::PdfDictionary());
+			PoDoFo::PdfObject to = PoDoFo::PdfObject(PoDoFo::PdfDictionary());
 			targetPage->GetResources()->GetDictionary().AddKey(PoDoFo::PdfName("XObject"), to);
 		}
 		targetPage->GetResources()->GetDictionary().GetKey(PoDoFo::PdfName("XObject"))->GetDictionary().AddKey(PoDoFo::PdfName(objname), xobj->GetObjectReference());
+
+		std::cerr<<"Appended xobject: /"<< objname << targetTransform.toCMString() <<std::endl;
 
 	}
 	

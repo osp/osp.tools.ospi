@@ -23,28 +23,88 @@
 #define OSPI_TRANSFORM_H
 
 #include <string>
+#include <vector>
 
 namespace ospi {
 	
 	class Transform
 	{
-		protected:
-			double a,b,c,d,e,f;
-
 		public:
-			Transform():
-				a(1.0), b(0), c(0), d(1.0), e(0), f(0) {}
-			Transform(double aa, double ab, double ac, double ad, double ae, double af):
-				a(aa), b(ab), c(ac), d(ad), e(ae), f(af) {}
+			class MVector : public std::vector<double>
+			{
+				public:
+					MVector& operator<< (const double& v)
+					{
+						this->push_back(v);
+						return (*this);
+					}
+			};
+			class Matrix : public std::vector<MVector>
+			{
+				public:
+					Matrix()
+					{
+						MVector m1;
+						MVector m2;
+						MVector m3;
+
+						m1 << 1 << 0 << 0;
+						m2 << 0 << 1 << 0;
+						m3 << 0 << 0 << 1;
+
+						(*this) << m1 << m2 << m3;
+					}
+
+					double& m(unsigned int row, unsigned int col)
+					{
+						// idea is to reflect usual notation m11 m12 m21 ...
+						return (*this)[row-1][col-1];
+					}
+
+					const double& m(unsigned int row, unsigned int col) const
+					{
+						return this->at(row-1).at(col-1);
+					}
+
+					Matrix& operator<< (const MVector& v)
+					{
+						this->push_back(v);
+						return (*this);
+					}
+
+					const Matrix& operator *= (const Matrix &o)
+					{
+						Matrix product;
+
+						for (int x(1); x<4; ++x)
+							for (int y(1); y<4; ++y)
+							{
+								double sum = 0;
+								for (int z(1); z<4; ++z)
+									sum += m(x,z) * o.m(z,y);
+								product.m(x,y) = sum;
+							}
+
+						(*this) = product;
+						return (*this);
+					}
+			};
+
+			Transform(){}
+			Transform(double a, double  b, double c,double d,double e,double f)
+			{
+				m.m(1,1) = a;
+				m.m(1,2) = b;
+				m.m(2,1) = c;
+				m.m(2,2) = d;
+				m.m(3,1) = e;
+				m.m(3,2) = f	;
+
+			}
+
 			Transform& operator=(const Transform& other)
 			{
-				a = other.a;
-				b = other.b;
-				c = other.c;
-				d = other.d;
-				e = other.e;
-				f = other.f;
-
+				m = other.m;
 				return *this;
 			}
 
@@ -55,8 +115,12 @@ namespace ospi {
 			Transform& rotate(double r);
 			Transform& scale(double sx, double sy);
 
+
 			static Transform fromString(const std::string& tm);
 			std::string toCMString() const;
+
+		protected:
+			Matrix m;
 
 	};
 	

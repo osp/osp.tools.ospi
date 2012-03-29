@@ -21,6 +21,7 @@
 
 #include "Transform.h"
 
+#include <iostream>
 #include <sstream>
 #include <cmath>
 
@@ -35,40 +36,50 @@ namespace ospi {
 	std::string Transform::toCMString() const
 	{
 		std::ostringstream buffer;
+		buffer.precision(5);
 		buffer << std::fixed
-		       << a << ' '
-		       << b << ' '
-		       << c << ' '
-		       << d << ' '
-		       << e << ' '
-		       << f << ' '
-		       << "cm\n";
+		       << m.m(1,1) << ' '
+		       << m.m(1,2) << ' '
+		       << m.m(2,1) << ' '
+		       << m.m(2,2) << ' '
+		       << m.m(3,1) << ' '
+		       << m.m(3,2) << ' '
+		       << "cm";
 		return buffer.str();
-	}
-
-	Transform& Transform::scale(double sx, double sy)
-	{
-		a *= sx;
-		d *= sy;
-		return (*this);
 	}
 
 	Transform& Transform::translate(double dx, double dy)
 	{
-		e += dx;
-		f += dy;
+		Matrix transMat;
+		transMat.m(3,1) = dx;
+		transMat.m(3,2) = dy;
+		m *= transMat;
 		return (*this);
 	}
 
 	Transform& Transform::rotate(double r)
 	{
-		double cosR = cos(r * 3.14159 / 180.0);
-		double sinR = sin(r * 3.14159 / 180.0);
+		double rGrad(r * 3.14159 / 180.0);
+		double cosR = cos(rGrad);
+		double sinR = sin(rGrad);
+		Matrix rotMat;
+		rotMat.m(1,1) = cosR;
+		rotMat.m(1,2) = -sinR;
+		rotMat.m(2,1) = sinR;
+		rotMat.m(2,2) = cosR;
+		m *= rotMat;
+		return (*this);
 
-		a *= cosR;
-		b = sinR;
-		c = -sinR;
-		b *= cosR;
 	}
+
+	Transform& Transform::scale(double sx, double sy)
+	{
+		Matrix scaleMat;
+		scaleMat.m(1,1) = sx;
+		scaleMat.m(2,2) = sy;
+		m *= scaleMat;
+		return (*this);
+	}
+
 	
 } // namespace ospi
