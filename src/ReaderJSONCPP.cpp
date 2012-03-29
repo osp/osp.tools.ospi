@@ -144,20 +144,28 @@ namespace ospi {
 		height = slot.get(K_SlotHeight, srect.GetHeight()).asDouble();
 		rotation = slot.get(K_Rotation, 0).asDouble();
 
+
+		double transX(left);
+		double transY(tpage->GetMediaBox().GetHeight() - (top + height));
+		double rotate(-rotation * 90.0);
+		double scaleX(width / srect.GetWidth());
+		double scaleY(height / srect.GetHeight());
+
 		Transform t;
 		std::cerr<<"========="<<std::endl;
 
 		std::cerr<<"translate = "<<left<<" "<< (tpage->GetMediaBox().GetHeight() - (top + height)) <<std::endl;
-		t.translate(left, tpage->GetMediaBox().GetHeight() - (top + height));
+		t.translate(transX / scaleX, transY /scaleY);
 		std::cerr<<t.toCMString()<<std::endl;
 
-		std::cerr<<"rotate = "<<(abs((rotation * 90.0) - 360.0))<<std::endl;
-		t.rotate(abs((rotation * 90.0) - 360.0), ospi::Point(left, top));
+		std::cerr<<"rotate = "<<rotate<<std::endl;
+		t.rotate(rotate, ospi::Point(left / scaleX, top / scaleY));
 		std::cerr<<t.toCMString()<<std::endl;
 
-		t.scale(width / srect.GetWidth(), height / srect.GetHeight());
+		t.scale(scaleX, scaleY);
 		std::cerr<<"scale = "<< (width / srect.GetWidth())<<" "<< (height / srect.GetHeight())<<std::endl;
 		std::cerr<<t.toCMString()<<std::endl;
+
 
 		sp->setTransform(t);
 
