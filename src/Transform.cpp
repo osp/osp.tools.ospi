@@ -58,7 +58,7 @@ namespace ospi {
 			tr1.m(3,1) = -origin.x;
 			tr1.m(3,2) = -origin.y;
 			rotMat *= tr1;
-			std::cerr<<"\tTR1 "<< rotMat.toString()<<std::endl;
+//			std::cerr<<"\tTR1 "<< rotMat.toString()<<std::endl;
 
 			Matrix tr2;
 			tr2.m(1,1) = cosR;
@@ -66,13 +66,13 @@ namespace ospi {
 			tr2.m(2,1) = -sinR;
 			tr2.m(2,2) = cosR;
 			rotMat *= tr2;
-			std::cerr<<"\tTR2 "<< rotMat.toString()<<std::endl;
+//			std::cerr<<"\tTR2 "<< rotMat.toString()<<std::endl;
 
 			Matrix tr3;
 			tr3.m(3,1) = origin.x;
 			tr3.m(3,2) = origin.y;
 			rotMat *= tr3;
-			std::cerr<<"\tTR3 "<< rotMat.toString()<<std::endl;
+//			std::cerr<<"\tTR3 "<< rotMat.toString()<<std::endl;
 		}
 		else
 		{

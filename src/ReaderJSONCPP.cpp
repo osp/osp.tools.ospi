@@ -75,7 +75,7 @@ namespace ospi {
 			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 
 		PoDoFo::PdfPage * pp(tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight)));
-		pp->GetContentsForAppending();
+		std::cerr<<"ADD PAGE: "<<pp<<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
 		for (unsigned int index(0); index < slots_.size(); ++index )
@@ -135,6 +135,12 @@ namespace ospi {
 		sp->setPage(tpage);
 		sp->setDoc(tdocument.get());
 
+		if(sdocptr->GetPageCount() <= spagenumber)
+		{
+			spagenumber = sdocptr->GetPageCount() - 1;
+			std::cerr<<"Try to get non-existing page "<<std::endl;
+		}
+
 		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
 
 		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
@@ -152,21 +158,9 @@ namespace ospi {
 		double scaleY(height / srect.GetHeight());
 
 		Transform t;
-		std::cerr<<"========="<<std::endl;
-
-		std::cerr<<"translate = "<<left<<" "<< (tpage->GetMediaBox().GetHeight() - (top + height)) <<std::endl;
 		t.translate(transX / scaleX, transY /scaleY);
-		std::cerr<<t.toCMString()<<std::endl;
-
-		std::cerr<<"rotate = "<<rotate<<std::endl;
 		t.rotate(rotate, ospi::Point(left / scaleX, top / scaleY));
-		std::cerr<<t.toCMString()<<std::endl;
-
 		t.scale(scaleX, scaleY);
-		std::cerr<<"scale = "<< (width / srect.GetWidth())<<" "<< (height / srect.GetHeight())<<std::endl;
-		std::cerr<<t.toCMString()<<std::endl;
-
-
 		sp->setTransform(t);
 
 		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
