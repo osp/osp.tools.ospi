@@ -75,13 +75,13 @@ namespace ospi {
 			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 
 		PoDoFo::PdfPage * pp(tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight)));
-		std::cerr<<"ADD PAGE: "<<pp<<std::endl;
+		std::cerr<<"ADD PAGE: "<<pp<< " " << tdocument->GetPage(tpidx) <<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
 		for (unsigned int index(0); index < slots_.size(); ++index )
 		{
 			Json::Value rec(slots_[index]);
-			readSlot(rec, pp);
+			readSlot(rec, tdocument->GetPage(tpidx));
 		}
 
 	}
@@ -127,20 +127,19 @@ namespace ospi {
 		spagenumber = slot.get(K_SlotPage, 1).asInt() - 1; // to discuss with json providers whether we go natural counting or not.
 		if(sdocuments.find(sdoc) == sdocuments.end())
 		{
-			PoDoFo::PdfMemDocument * d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
-			sdocuments[sdoc] = DocumentPtr(d);
+			DocumentPtr d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+			sdocuments[sdoc] = d;
 		}
 		DocumentPtr sdocptr(sdocuments[sdoc]);
-		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
-		sp->setPage(tpage);
-		sp->setDoc(tdocument.get());
 
 		if(sdocptr->GetPageCount() <= spagenumber)
 		{
 			spagenumber = sdocptr->GetPageCount() - 1;
 			std::cerr<<"Try to get non-existing page "<<std::endl;
 		}
-
+		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
+		sp->setPage(tpage);
+		sp->setDoc(tdocument.get());
 		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
 
 		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());

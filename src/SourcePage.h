@@ -73,8 +73,8 @@ namespace ospi {
 			PoDoFo::PdfObject* migrate(PoDoFo::PdfObject* obj);
 			void writeResource(const PoDoFo::PdfName &rname, const PdfResource &r);
 
-		public:
 			SourcePage(){}
+		public:
 			SourcePage(PoDoFo::PdfDocument * doc, unsigned int pageNumber);
 			SourcePage& operator= (const SourcePage& other);
 
