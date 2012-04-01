@@ -444,7 +444,7 @@ namespace ospi {
 		}
 		targetPage->GetResources()->GetDictionary().GetKey(PoDoFo::PdfName("XObject"))->GetDictionary().AddKey(PoDoFo::PdfName(objname), xobj->GetObjectReference());
 
-		std::cerr<<"Appended xobject: /"<< objname << targetTransform.toCMString() <<std::endl;
+		std::cerr<<"Appended xobject: /"<< objname << "\tT: "<< targetTransform.toCMString() <<std::endl;
 
 	}
 	

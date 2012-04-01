@@ -107,7 +107,7 @@ namespace ospi {
 					std::string toString() const
 					{
 						std::ostringstream buffer;
-						buffer.precision(5);
+						buffer.precision(4);
 						buffer << std::fixed
 						       << m(1,1) << ' '
 						       << m(1,2) << ' '
@@ -142,7 +142,7 @@ namespace ospi {
 			// In recomanded order: translate, rotate, scale [PDFRef1.4v3 p143]
 			Transform& translate(double dx, double dy);
 			Transform& rotate(double r, const Point& origin = Point());
-			Transform& scale(double sx, double sy);
+			Transform& scale(double sx, double sy, const Point& origin = Point());
 
 
 			static Transform fromString(const std::string& tm);

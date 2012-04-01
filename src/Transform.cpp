@@ -87,11 +87,31 @@ namespace ospi {
 
 	}
 
-	Transform& Transform::scale(double sx, double sy)
+	Transform& Transform::scale(double sx, double sy, const Point &origin)
 	{
 		Matrix scaleMat;
-		scaleMat.m(1,1) = sx;
-		scaleMat.m(2,2) = sy;
+		if(!origin.IsOrigin())
+		{
+			Matrix tr1;
+			tr1.m(3,1) = -origin.x;
+			tr1.m(3,2) = -origin.y;
+			scaleMat *= tr1;
+
+			Matrix tr2;
+			tr2.m(1,1) = sx;
+			tr2.m(2,2) = sy;
+			scaleMat *= tr2;
+
+			Matrix tr3;
+			tr3.m(3,1) = origin.x;
+			tr3.m(3,2) = origin.y;
+			scaleMat *= tr3;
+		}
+		else
+		{
+			scaleMat.m(1,1) = sx;
+			scaleMat.m(2,2) = sy;
+		}
 		m *= scaleMat;
 		return (*this);
 	}

@@ -91,11 +91,13 @@ namespace ospi {
 		// here we are!
 		std::string sdoc;
 		unsigned int spagenumber;
-		double left, top, width, height;
-		double cleft, ctop, cwidth, cheight;
+		double left, top, width, height, bottom;
+		double cleft, ctop, cwidth, cheight, cbottom;
 		double rotation;
 
+		// IMPORTANT: the slot is already rotated. It does mean that width and height of the source document have to be compared to de-rotated slot dimensions
 
+		// Source PDF file
 		sdoc = slot.get(K_SlotFile, sdoc).asString();
 		if(sdoc.empty())
 		{
@@ -123,7 +125,7 @@ namespace ospi {
 #endif
 		}
 
-
+		// Source page
 		spagenumber = slot.get(K_SlotPage, 1).asInt() - 1; // to discuss with json providers whether we go natural counting or not.
 		if(sdocuments.find(sdoc) == sdocuments.end())
 		{
@@ -142,34 +144,62 @@ namespace ospi {
 		sp->setDoc(tdocument.get());
 		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
 
+		// GEOMETRY
+
+		PoDoFo::PdfRect targetPageRect(tpage->GetMediaBox());
+
 		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
 		left = slot.get(K_SlotLeft, 0).asDouble();
 		top = slot.get(K_SlotTop, 0).asDouble();
 		width = slot.get(K_SlotWidth,srect.GetWidth()).asDouble();
 		height = slot.get(K_SlotHeight, srect.GetHeight()).asDouble();
+		bottom = targetPageRect.GetHeight() - (top + height);
+		ospi::Point slotCenter(left + (width / 2.0), (targetPageRect.GetHeight() - top) - (height / 2.0));
+		std::cerr<<"slotCenter: "<<slotCenter.x<<" "<<slotCenter.y<<std::endl;
+
+		// NOTE: rotation point is the center of the cropped page
 		rotation = slot.get(K_Rotation, 0).asDouble();
 
-
-		double transX(left);
-		double transY(tpage->GetMediaBox().GetHeight() - (top + height));
-		double rotate(-rotation * 90.0);
-		double scaleX(width / srect.GetWidth());
-		double scaleY(height / srect.GetHeight());
-
-		Transform t;
-		t.translate(transX / scaleX, transY /scaleY);
-		t.rotate(rotate, ospi::Point(left / scaleX, top / scaleY));
-		t.scale(scaleX, scaleY);
-		sp->setTransform(t);
-
+		// We get default values from
 		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
-		cleft = slot.get(K_CropLeft, 0).asDouble();
-		ctop = slot.get(K_CropTop, 0).asDouble();
+		cleft = slot.get(K_CropLeft,crect.GetLeft()).asDouble();
+		ctop = slot.get(K_CropTop, srect.GetHeight() -(crect.GetBottom() + crect.GetHeight())).asDouble();
 		cwidth = slot.get(K_CropWidth,crect.GetWidth()).asDouble();
 		cheight = slot.get(K_CropHeight, crect.GetHeight()).asDouble();
+		cbottom = srect.GetHeight() - (ctop + cheight);
 
 		PoDoFo::PdfRect crop(cleft, srect.GetHeight() -( ctop + cheight), cwidth, cheight);
 		sp->setCrop(crop);
+
+
+		double rotate(-rotation * 90.0);
+		double scaleX(width / cwidth);
+		double scaleY(height / cheight);
+		if(rotation == 1 || rotation == 3)
+		{
+			scaleX = width / cheight;
+			scaleY = height / cwidth;
+		}
+
+		ospi::Point cropCenter((cleft + (cwidth / 2.0)) * 1.0, ((srect.GetHeight() - ctop) - (cheight / 2.0)) * 1.0);
+		std::cerr<<"cropCenter: "<<cropCenter.x<<" "<<cropCenter.y<<std::endl;
+
+		double transX(slotCenter.x - cropCenter.x);
+		double transY(slotCenter.y - cropCenter.y);
+
+		Transform t;
+
+		t.translate(transX, transY);
+//		std::cerr<<"translate("<< (transX) << ", " << (transY)<<")" <<" => "<<t.toCMString()<<std::endl;
+
+		t.rotate(rotate, slotCenter);
+//		std::cerr<<"rotate("<< rotate << ", Point(" << (slotCenter.x ) << ", "<<  (slotCenter.y ) <<"))" <<" => "<<t.toCMString()<<std::endl;
+
+		t.scale(scaleX, scaleY, slotCenter);
+//		std::cerr<<"scale("<< (scaleX) << ", " << (scaleY)<<")" <<" => "<<t.toCMString()<<std::endl;
+
+		sp->setTransform(t);
+
 
 		spages.push_back(sp);
 	}
