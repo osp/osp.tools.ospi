@@ -172,9 +172,9 @@ namespace ospi {
 		sp->setCrop(crop);
 
 
-		double rotate(-rotation * 90.0);
-		double scaleX(width / cwidth);
-		double scaleY(height / cheight);
+		trx_double_t rotate(-rotation * 90.0);
+		trx_double_t scaleX(width / cwidth);
+		trx_double_t scaleY(height / cheight);
 		if(rotation == 1 || rotation == 3)
 		{
 			scaleX = width / cheight;
@@ -184,8 +184,8 @@ namespace ospi {
 		ospi::Point cropCenter((cleft + (cwidth / 2.0)) * 1.0, ((srect.GetHeight() - ctop) - (cheight / 2.0)) * 1.0);
 		std::cerr<<"cropCenter: "<<cropCenter.x<<" "<<cropCenter.y<<std::endl;
 
-		double transX(slotCenter.x - cropCenter.x);
-		double transY(slotCenter.y - cropCenter.y);
+		trx_double_t transX(slotCenter.x - cropCenter.x);
+		trx_double_t transY(slotCenter.y - cropCenter.y);
 
 		Transform t;
 
