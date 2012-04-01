@@ -24,19 +24,27 @@
 
 #include <map>
 #include <string>
+#include <vector>
 #include <boost/lexical_cast.hpp>
 
 namespace ospi {
 	
 	class PlanParams
 	{
+		public:
+			static const std::string ParamPlanFile;
+			static const std::string ParamPlanType;
 		protected:
 			std::map<std::string, std::string> pData;
 
 		public:
 			PlanParams();
 			void Add(const std::string& paramstring);
+			void Add(const std::string &key, const std::string& val);
 			bool Has(const std::string& key) const;
+			bool Has(const std::vector<std::string>& keys) const;
+
+			std::string GetString(const std::string& key) const;
 
 			template <class T>
 			T Get(const std::string& key, const T& d) const

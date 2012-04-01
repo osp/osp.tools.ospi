@@ -23,8 +23,12 @@
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/foreach.hpp>
 
 namespace ospi {
+
+	const std::string PlanParams::ParamPlanFile = std::string("plan_file");
+	const std::string PlanParams::ParamPlanType = std::string("plan_type");
 	
 	PlanParams::PlanParams()
 	{
@@ -38,11 +42,33 @@ namespace ospi {
 			pData[res.at(0)] = res.at(1);
 	}
 
+	void PlanParams::Add(const std::string &key, const std::string &val)
+	{
+		pData[key] = val;
+	}
+
 	bool PlanParams::Has(const std::string &key) const
 	{
 		if(pData.find(key) != pData.end())
 			return true;
 		return false;
+	}
+
+	bool PlanParams::Has(const std::vector<std::string> &keys) const
+	{
+		BOOST_FOREACH(const std::string& key , keys)
+		{
+			if(!Has(key))
+				return false;
+		}
+		return true;
+	}
+
+	std::string PlanParams::GetString(const std::string &key) const
+	{
+		if(Has(key))
+			return pData.find(key)->second;
+		return std::string();
 	}
 
 	void PlanParams::Remove(const std::string &key)

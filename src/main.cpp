@@ -22,6 +22,7 @@
 #include <iostream>
 #include <map>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include "ResourceCollection.h"
 #include "SourcePage.h"
@@ -30,37 +31,48 @@
 
 int main(int ac, char ** av)
 {
-//	ospi::ResourceCollection rc;
-//	PoDoFo::PdfMemDocument targetDoc;
-
-//	for(int d(1); d < ac; ++d)
-//	{
-//		PoDoFo::PdfMemDocument doc(av[d]);
-//		int pc(doc.GetPageCount());
-//		for(int i(0); i < pc; ++i)
-//		{
-//			PoDoFo::PdfPage* p(doc.GetPage(i));
-//			std::cerr<<"Page ("<<d<<")"<<(i+1)<<std::endl;
-//			ospi::SourcePage sp(&doc, i);
-//			sp.setDoc(&targetDoc);
-//			sp.setPage(targetDoc.CreatePage(p->GetMediaBox()));
-
-//			sp.commit();
-//		}
-//	}
-//	targetDoc.SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
-//	targetDoc.Write("test.pdf");
-
-	std::string plan(av[1]);
-	std::string reader(av[2]);
+	if(ac == 1)
+	{
+		std::cerr<<"Usage: "<<av[0]<< " " << ospi::PlanParams::ParamPlanFile << "=your_plan_file ["
+			<< ospi::PlanParams::ParamPlanType << "=simple|json] [option_key=option_value ...]"<<std::endl;
+		return 1;
+	}
 
 	ospi::PlanParams params;
-	for(int i(3); i < ac; ++i)
+	for(int i(1); i < ac; ++i)
 	{
 		params.Add(std::string(av[i]));
 	}
 
-	ospi::PlanReaderFactory::Impose(reader, plan, params);
+	if(!params.Has(ospi::PlanParams::ParamPlanFile))
+	{
+		std::cerr<<"You must provide an imposition plan file path argument."<<std::endl;
+		return 2;
+	}
+	if(!params.Has(ospi::PlanParams::ParamPlanType))
+	{
+		// try to guess the type by the extension of the plan file
+		std::vector<std::string> res;
+		std::string planfile(params.GetString(ospi::PlanParams::ParamPlanFile));
+		boost::algorithm::split( res, planfile , boost::algorithm::is_any_of("."), boost::algorithm::token_compress_on );
+		if(res.size() == 1) // no extension, we assume it's a simple plan
+			params.Add(ospi::PlanParams::ParamPlanType, std::string("simple"));
+		else
+		{
+			std::string extension(res.back());
+			if(extension == std::string("json"))
+				params.Add(ospi::PlanParams::ParamPlanType, std::string("json"));
+			// else if ...
+			else
+			{
+				std::cerr<<"Unknown extension and no plan type provided, stop here."<<std::endl;
+				return 3;
+			}
+		}
+
+	}
+
+	ospi::PlanReaderFactory::Impose(params.GetString(ospi::PlanParams::ParamPlanType), params.GetString(ospi::PlanParams::ParamPlanFile), params);
 
 	return 0;
 }
