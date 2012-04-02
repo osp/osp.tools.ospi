@@ -18,6 +18,13 @@ It's recommended to build the program outside the source tree, in order to facil
 
 *INSTALL on Linux/UNIX
 
+First ensure the dependencies are there:
+$ sudo aptitude install libboost-all-dev
+$ sudo aptitude install libgmp3-dev
+
+Unfortunately podofo has no Ubuntu packages (and they recommend compiling anyways), so you'll need to follow the convoluated compilations: http://podofo.sourceforge.net/
+
+
 First move to the root of ospi directory
 $ cd /WHERE/IS/OSPI
 
@@ -40,7 +47,16 @@ $ make install
 
 *INSTALL on Mac OS X
 
-The same as for Linux/UNIX. With the option to generate an XCode project.
+First ensure the dependencies are there:
+$ brew install boost
+$ brew install podofo
+$ brew install gmp
+
+If you run into build issues, you may need to run this first:
+$ brew update
+$ brew doctor
+
+Then the same as for Linux/UNIX. With the option to generate an XCode project.
 
 *INSTALL on Windows
 
