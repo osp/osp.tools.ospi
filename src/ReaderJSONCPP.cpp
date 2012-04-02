@@ -99,6 +99,7 @@ namespace ospi {
 
 		// Source PDF file
 		sdoc = slot.get(K_SlotFile, sdoc).asString();
+		bool fileIsRemote(false);
 		if(sdoc.empty())
 		{
 			Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
@@ -106,10 +107,11 @@ namespace ospi {
 			std::vector<std::string> urlvec;
 			boost::algorithm::split( urlvec, rsdocurl, boost::algorithm::is_any_of("/"), boost::algorithm::token_compress_on );
 			sdoc = urlvec.back();
+			fileIsRemote = true;
 
 		}
 		boost::filesystem3::path fp(sdoc.c_str());
-		if(!boost::filesystem3::exists(fp))
+		if(!boost::filesystem3::exists(fp) || fileIsRemote)
 		{
 #ifdef WITH_CURL
 			// try to get it from internet

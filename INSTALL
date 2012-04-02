@@ -1,0 +1,49 @@
+ospi - INSTALL
+
+ospi is written in C++, in order to compile it, you will need a working toolchain and a c++ compiler.
+
+ospi depends on:
+PoDoFo <http://podofo.sourceforge.net/>
+Boost <http://www.boost.org/>
+
+ospi can make use of:
+libcurl <http://curl.haxx.se/libcurl/>
+gmplib <http://gmplib.org/>
+
+
+We use CMake <http://www.cmake.org/> to build and install ospi.
+
+
+It's recommended to build the program outside the source tree, in order to facilitate source code versioning management.
+
+*INSTALL on Linux/UNIX
+
+First move to the root of ospi directory
+$ cd /WHERE/IS/OSPI
+
+Create a build directory
+$ mkdir build
+
+and move into it
+$ cd build
+
+Run CMake to generate the makefiles
+$ cmake ../
+
+Then compile the program
+$ make
+
+The program is now under ./src/ directory with the name ospi. You can run it from here just by typing "./src/ospi"
+If you want to install it, instruct make to do it
+$ make install
+
+
+*INSTALL on Mac OS X
+
+The same as for Linux/UNIX. With the option to generate an XCode project.
+
+*INSTALL on Windows
+
+#TODO
+
+
