@@ -19,10 +19,13 @@ It's recommended to build the program outside the source tree, in order to facil
 *INSTALL on Linux/UNIX
 
 First ensure the dependencies are there:
+$ sudo aptitude install cmake
 $ sudo aptitude install libboost-all-dev
 $ sudo aptitude install libgmp3-dev
 
-Unfortunately podofo has no Ubuntu packages (and they recommend compiling anyways), so you'll need to follow the convoluated compilations: http://podofo.sourceforge.net/
+Unfortunately podofo has no Ubuntu packages (and they recommend compiling anyways), so you'll need to follow the convoluated compilations: http://podofo.sourceforge.net/.
+But to help with dependencies install this first:
+$ sudo aptitude install libzlib libfreetype6-dev fontconfig libjpeg-dev libtiff-dev libpng3-dev
 
 
 First move to the root of ospi directory
@@ -48,6 +51,7 @@ $ make install
 *INSTALL on Mac OS X
 
 First ensure the dependencies are there:
+$ brew install cmake
 $ brew install boost
 $ brew install podofo
 $ brew install gmp
