@@ -1,0 +1,62 @@
+For installation instructions, see the INSTALL file.
+
+ospi is a PDF imposer based on PoDoFo. It produces PDF files from PDF files, re-arranging pages according to an imposition plan.
+ospi is a Free software released under GPLv3
+
+**Invocation
+
+ospi takes all its parameters in the form of key=value pairs. The only required
+key is "plan_file" which indicates to the program which imposition file to
+process. An optional key goes for "plan_type" to instruct the program on which
+plan reader it should call to process the plan file. If this key is missing, it
+will try to guess based on the extension of the plan filename. All other parameters 
+are specific to each plan reader.
+
+
+ospi processes imposition plan files in:
+- plain text format (simple)
+- JSON format (json).
+
+
+
+*simple
+The simple format is primarily intended to test ospi.
+/skip/
+
+
+*json
+The json format has been developed by CatPrint.com to integrate their workflow.
+The descrition of the format is as follows:
+{
+"output_root_name": "directory/filename-root"
+"plan": [{
+	"page_width": decimal_ps_points,
+	"page_height": decimal_ps_points,
+	"slots": [{
+		"width":  decimal_ps_points, /*width, height default to source page dimensions*/
+		"height": decimal_ps_points,
+		"left":   decimal_ps_points, 
+		"top":    decimal_ps_points, 
+		"file":   "local file location",
+		"page":   1, /* page of PDF, if absent defaults to 1 (in "natural counting")*/
+		"remote_file": { 
+			"url": "remote file location", 
+			"type": "‘pdf’ | ‘jpg’ | ‘html’"
+		},
+		"crop_width":  decimal_ps_points,
+		"crop_height": decimal_ps_points,
+		"crop_left":   decimal_ps_points,
+		"crop_top":    decimal_ps_points,
+		"rotation":    "0 | 1 | 2 | 3"
+		}, ...
+		/* repeat for each slot */
+		]
+	}, ...
+	/* repeat for each page */
+	]
+}
+
+the JSON plan reader looks up in parameters for the "output_root_name" if not provided by the json file.
+example:
+$ ospi plan_file=plan8up.json plan_type=json output_root_name=imposed_doc
+
