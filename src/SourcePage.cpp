@@ -26,9 +26,27 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+
+#ifndef WITHOUT_BOOST_UUID
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#else
+namespace ospi {
+// poor man's id
+	class PoorManID
+	{
+		private:
+			static unsigned int pID;
+		public:
+			unsigned int operator()()
+			{
+				return (++pID);
+			}
+	};
+	unsigned int PoorManID::pID = 0x0;
+}
+#endif
 
 #include <algorithm>
 #include <iostream>
@@ -425,7 +443,11 @@ namespace ospi {
 
 		// Now put this object in target doc
 		std::string objname("OriginalPage");
+#ifndef WITHOUT_BOOST_UUID
 		objname.append( boost::lexical_cast<std::string>(boost::uuids::random_generator()()));
+#else
+		objname.append( boost::lexical_cast<std::string>(PoorManID()()));
+#endif
 		std::ostringstream buffer;
 		buffer << "q\n";
 		buffer << targetTransform.toCMString()<<"\n";
