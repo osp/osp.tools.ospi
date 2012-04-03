@@ -27,7 +27,6 @@
 #include <sstream>
 
 
-#define WITH_GMP
 #ifndef WITH_GMP
 typedef double trx_double_t;
 #else

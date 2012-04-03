@@ -49,8 +49,13 @@ namespace ospi {
 	Transform& Transform::rotate(trx_double_t r, const Point &origin)
 	{
 		trx_double_t rGrad(r * trx_double_t(3.14159) / trx_double_t(180.0));
+#ifndef WITH_GMP
+                trx_double_t cosR(cos(rGrad));
+                trx_double_t sinR(sin(rGrad));
+#else
 		trx_double_t cosR(cos(rGrad.get_d()));
 		trx_double_t sinR(sin(rGrad.get_d()));
+#endif
 		Matrix rotMat;
 		if(!origin.IsOrigin())
 		{

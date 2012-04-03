@@ -27,6 +27,16 @@
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
+#ifndef WITHOUT_BOOST_FS3
+#define BOOST_FILESYSTEM_VERSION 3
+namespace filesystem = boost::filesystem3;
+#else
+namespace filesystem = boost::filesystem;
+#endif
+
+
+
+
 #include <boost/algorithm/string.hpp>
 
 //#define WITH_CURL
@@ -110,8 +120,8 @@ namespace ospi {
 			fileIsRemote = true;
 
 		}
-		boost::filesystem3::path fp(sdoc.c_str());
-		if(!boost::filesystem3::exists(fp) || fileIsRemote)
+		filesystem::path fp(sdoc.c_str());
+		if(!filesystem::exists(fp) || fileIsRemote)
 		{
 #ifdef WITH_CURL
 			// try to get it from internet
