@@ -40,6 +40,8 @@ namespace ospi {
 		protected:
 			typedef std::pair<PoDoFo::PdfName, PoDoFo::PdfObject*> PdfResource;
 
+			std::string rName;
+
 			// origin
 			PoDoFo::PdfDocument * sourceDoc;
 			unsigned int sourcePage;
@@ -47,7 +49,7 @@ namespace ospi {
 			PoDoFo::PdfPage * pCachedPage;
 
 			// transformation to apply to the XObject
-			Transform targetTransform;
+			std::vector<Transform> targetTransforms;
 
 			// Crop box (unscaled, just inserted as bbox to the XObject dictionary)
 			// defaults to the sourcepage Bleed box (following use cases presented in PDFRef1.4v3 p679)
@@ -78,13 +80,14 @@ namespace ospi {
 			SourcePage(PoDoFo::PdfDocument * doc, unsigned int pageNumber);
 			SourcePage& operator= (const SourcePage& other);
 
-			void setTransform(const Transform& t){targetTransform = t;}
+			void addTransform(const Transform& t){targetTransforms.push_back(t);}
 			void setCrop(const PoDoFo::PdfRect& rect){cropBox = rect;}
 			void setDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
 			void setPage(PoDoFo::PdfPage * p){targetPage = p;}
 			void setResource(unsigned int r){resourceIndex = r;}
 
-			Transform getTransform() const {return targetTransform;}
+			const std::string& getName() const{return rName;}
+			std::vector<Transform> getTransform() const {return targetTransforms;}
 			PoDoFo::PdfRect getCrop(){return cropBox;}
 			PoDoFo::PdfDocument * getDoc() const {return targetDoc;}
 			PoDoFo::PdfPage * getPage() const {return targetPage;}

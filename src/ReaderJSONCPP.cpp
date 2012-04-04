@@ -21,9 +21,10 @@
 
 #include "ReaderJSONCPP.h"
 
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
-#include <cmath>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -78,15 +79,16 @@ namespace ospi {
 		std::cerr<<"ADD PAGE: "<<pp<< " " << tdocument->GetPage(tpidx) <<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
+		std::map<std::string,SourcePagePtr> pDict;
 		for (unsigned int index(0); index < slots_.size(); ++index )
 		{
 			Json::Value rec(slots_[index]);
-			readSlot(rec, tdocument->GetPage(tpidx));
+			readSlot(rec, tdocument->GetPage(tpidx), pDict);
 		}
 
 	}
 
-	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage)
+	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage, std::map<std::string,SourcePagePtr>& pDict)
 	{
 		// here we are!
 		std::string sdoc;
@@ -110,41 +112,56 @@ namespace ospi {
 			fileIsRemote = true;
 
 		}
-		boost::filesystem3::path fp(sdoc.c_str());
-		if(!boost::filesystem3::exists(fp) || fileIsRemote)
-		{
-#ifdef WITH_CURL
-			// try to get it from internet
-			Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
-			std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
-			std::string rsdoctype(remote.get(K_SlotRemoteFileType, std::string("pdf")).asString());
-			if(rsdoctype != std::string("pdf"))
-				throw std::runtime_error("type of remote file is not PDF (JSONCPP)");
-			if(ospi_curl_get_file(rsdocurl.c_str(), sdoc.c_str()) > 0)
-				throw std::runtime_error("Can't fetch file from internet (JSONCPP/CURL)");
-#else
-			throw std::runtime_error("Can't find source PDF file (JSONCPP/CURL)");
-#endif
-		}
+
 
 		// Source page
 		spagenumber = slot.get(K_SlotPage, 1).asInt() - 1; // to discuss with json providers whether we go natural counting or not.
-		if(sdocuments.find(sdoc) == sdocuments.end())
-		{
-			DocumentPtr d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
-			sdocuments[sdoc] = d;
-		}
-		DocumentPtr sdocptr(sdocuments[sdoc]);
 
-		if(sdocptr->GetPageCount() <= spagenumber)
+		SourcePagePtr sp;
+		std::string origineName(sdoc);
+		origineName.append("#");
+		origineName.append(boost::lexical_cast<std::string>(spagenumber));
+		if(pDict.find(origineName) == pDict.end())
 		{
-			spagenumber = sdocptr->GetPageCount() - 1;
-			std::cerr<<"Try to get non-existing page "<<std::endl;
+			boost::filesystem3::path fp(sdoc.c_str());
+			if(!boost::filesystem3::exists(fp) || fileIsRemote)
+			{
+#ifdef WITH_CURL
+				// try to get it from internet
+				Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
+				std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
+				std::string rsdoctype(remote.get(K_SlotRemoteFileType, std::string("pdf")).asString());
+				if(rsdoctype != std::string("pdf"))
+					throw std::runtime_error("type of remote file is not PDF (JSONCPP)");
+				if(ospi_curl_get_file(rsdocurl.c_str(), sdoc.c_str()) > 0)
+					throw std::runtime_error("Can't fetch file from internet (JSONCPP/CURL)");
+#else
+				throw std::runtime_error("Can't find source PDF file (JSONCPP/CURL)");
+#endif
+			}
+
+			if(sdocuments.find(sdoc) == sdocuments.end())
+			{
+				DocumentPtr d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+				sdocuments[sdoc] = d;
+			}
+			DocumentPtr sdocptr(sdocuments[sdoc]);
+
+			if(sdocptr->GetPageCount() <= spagenumber)
+			{
+				spagenumber = sdocptr->GetPageCount() - 1;
+				std::cerr<<"Try to get non-existing page "<<std::endl;
+			}
+			sp = SourcePagePtr(new SourcePage(sdocptr.get(), spagenumber));
+			sp->setPage(tpage);
+			sp->setDoc(tdocument.get());
+			pDict[origineName] = sp;
 		}
-		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
-		sp->setPage(tpage);
-		sp->setDoc(tdocument.get());
-		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
+		else
+		{
+			sp = pDict.find(origineName)->second;
+		}
+		PoDoFo::PdfPage * sourcepage(sdocuments.find(sdoc)->second->GetPage(spagenumber));
 
 		// GEOMETRY
 
@@ -200,10 +217,10 @@ namespace ospi {
 		t.scale(scaleX, scaleY, slotCenter);
 //		std::cerr<<"scale("<< (scaleX) << ", " << (scaleY)<<")" <<" => "<<t.toCMString()<<std::endl;
 
-		sp->setTransform(t);
+		sp->addTransform(t);
 
-
-		spages.push_back(sp);
+		if(std::find(spages.begin(), spages.end(), sp) == spages.end())
+			spages.push_back(sp);
 	}
 
 	int ReaderJSONCPP::Impose()

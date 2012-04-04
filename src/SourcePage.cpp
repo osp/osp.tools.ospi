@@ -72,6 +72,15 @@ namespace ospi {
 		  sourcePage(pageNumber),
 		  pCachedPage(NULL)
 	{
+		std::string objname("RPage");
+#ifndef WITHOUT_BOOST_UUID
+		objname.append( boost::lexical_cast<std::string>(boost::uuids::random_generator()()));
+#else
+		objname.append( boost::lexical_cast<std::string>(PoorManID()()));
+#endif
+		rName = objname;
+
+		std::cerr<<"SourcePage: "<< rName << std::endl;
 	}
 
 	SourcePage& SourcePage::operator=(const SourcePage& other)
@@ -442,17 +451,15 @@ namespace ospi {
 		extractResource();
 
 		// Now put this object in target doc
-		std::string objname("OriginalPage");
-#ifndef WITHOUT_BOOST_UUID
-		objname.append( boost::lexical_cast<std::string>(boost::uuids::random_generator()()));
-#else
-		objname.append( boost::lexical_cast<std::string>(PoorManID()()));
-#endif
+
 		std::ostringstream buffer;
-		buffer << "q\n";
-		buffer << targetTransform.toCMString()<<"\n";
-		buffer << "/" << objname << " Do\n";
-		buffer << "Q\n";
+		BOOST_FOREACH(Transform& trx, targetTransforms)
+		{
+			buffer << "q\n";
+			buffer << trx.toCMString()<<"\n";
+			buffer << "/" << rName << " Do\n";
+			buffer << "Q\n";
+		}
 		std::string bufStr = buffer.str();
 		PoDoFo::PdfObject* pageObject(targetPage->GetContentsForAppending());
 		PoDoFo::PdfStream * contentstream(pageObject->GetStream());
@@ -464,9 +471,9 @@ namespace ospi {
 			PoDoFo::PdfObject to = PoDoFo::PdfObject(PoDoFo::PdfDictionary());
 			targetPage->GetResources()->GetDictionary().AddKey(PoDoFo::PdfName("XObject"), to);
 		}
-		targetPage->GetResources()->GetDictionary().GetKey(PoDoFo::PdfName("XObject"))->GetDictionary().AddKey(PoDoFo::PdfName(objname), xobj->GetObjectReference());
+		targetPage->GetResources()->GetDictionary().GetKey(PoDoFo::PdfName("XObject"))->GetDictionary().AddKey(PoDoFo::PdfName(rName), xobj->GetObjectReference());
 
-		std::cerr<<"Appended xobject: /"<< objname << "\tT: "<< targetTransform.toCMString() <<std::endl;
+//		std::cerr<<"Appended xobject: /"<< objname << "\tT: "<< targetTransform.toCMString() <<std::endl;
 
 	}
 	

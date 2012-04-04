@@ -85,7 +85,7 @@ namespace ospi {
 		}
 		PoDoFo::PdfPage * tpage(tdocptr->GetPage(tpagenumber));
 		sp->setDoc(tdocptr.get());
-		sp->setTransform(Transform(a,b,c,d,e,f));
+		sp->addTransform(Transform(a,b,c,d,e,f));
 		sp->setPage(tpage);
 
 		spages.push_back(sp);
