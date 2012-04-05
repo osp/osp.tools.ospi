@@ -38,7 +38,7 @@ namespace ospi {
 			std::map<std::string, DocumentPtr> sdocuments;
 			DocumentPtr tdocument;
 
-			static const std::string K_OutputRoot;
+			static const std::string K_OutputFile;
 			static const std::string K_Plan;
 			static const std::string K_TargetWidth;
 			static const std::string K_TargetHeight;

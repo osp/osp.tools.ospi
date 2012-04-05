@@ -28,7 +28,6 @@ The simple format is primarily intended to test ospi.
 The json format has been developed by CatPrint.com to integrate their workflow.
 The descrition of the format is as follows:
 {
-"output_root_name": "directory/filename-root"
 "plan": [{
 	"page_width": decimal_ps_points,
 	"page_height": decimal_ps_points,
@@ -56,7 +55,6 @@ The descrition of the format is as follows:
 	]
 }
 
-the JSON plan reader looks up in parameters for the "output_root_name" if not provided by the json file.
 example:
-$ ospi plan_file=plan8up.json plan_type=json output_root_name=imposed_doc
+$ ospi plan_file=plan8up.json plan_type=json output_file_name=imposed_doc.pdf
 

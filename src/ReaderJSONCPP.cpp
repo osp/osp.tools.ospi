@@ -50,7 +50,7 @@ int ospi_curl_get_file(const char * url, const char * filename);
 
 namespace ospi {
 
-	const std::string ReaderJSONCPP::K_OutputRoot = std::string("output_root_name");
+	const std::string ReaderJSONCPP::K_OutputFile = std::string("output_file_name");
 	const std::string ReaderJSONCPP::K_Plan = std::string("plan");
 	const std::string ReaderJSONCPP::K_TargetWidth = std::string("page_width");
 	const std::string ReaderJSONCPP::K_TargetHeight = std::string("page_height");
@@ -255,15 +255,15 @@ namespace ospi {
 		}
 
 		std::string outputName;
-		outputName = root.get(K_OutputRoot,outputName).asString();
+		outputName = root.get(K_OutputFile,outputName).asString();
 		if(outputName.empty())
 		{
-			if(params.Has(K_OutputRoot))
+			if(params.Has(K_OutputFile))
 			{
-				outputName = params.Get(K_OutputRoot, std::string());
+				outputName = params.Get(K_OutputFile, std::string());
 			}
 			if(outputName.empty())
-				throw std::runtime_error("Can't get output_root_name (JSONCPP)");
+				throw std::runtime_error("Can't get output_file_name (JSONCPP)");
 		}
 
 		PoDoFo::PdfMemDocument * tdoc(new PoDoFo::PdfMemDocument);
@@ -283,7 +283,7 @@ namespace ospi {
 		}
 
 		tdocument->SetWriteMode(PoDoFo::ePdfWriteMode_Clean);
-		tdocument->Write(outputName.append(".pdf").c_str());
+		tdocument->Write(outputName.c_str());
 
 	}
 	
