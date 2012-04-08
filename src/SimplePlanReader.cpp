@@ -68,7 +68,7 @@ namespace ospi {
 			sdocuments[sdoc] = DocumentPtr(d);
 		}
 		DocumentPtr sdocptr(sdocuments[sdoc]);
-		SourcePagePtr sp(new SourcePage(sdocptr.get(), spagenumber));
+		SourcePagePtr sp(new SourcePage);
 
 		if(tdocuments.find(tdoc) == tdocuments.end())
 		{
@@ -84,9 +84,9 @@ namespace ospi {
 				throw std::logic_error("Would need to create empty pages without knowing their geometry");
 		}
 		PoDoFo::PdfPage * tpage(tdocptr->GetPage(tpagenumber));
-		sp->setDoc(tdocptr.get());
+		sp->setTargetDoc(tdocptr.get());
 		sp->addTransform(Transform(a,b,c,d,e,f));
-		sp->setPage(tpage);
+		sp->setTargetPage(tpage);
 
 		spages.push_back(sp);
 	}

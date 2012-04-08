@@ -66,11 +66,7 @@ namespace ospi {
 //			(PoDoFo::PdfName("Properties"))
 			;
 
-	SourcePage::SourcePage(PoDoFo::PdfDocument* doc, unsigned int pageNumber)
-		:
-		  sourceDoc(doc),
-		  sourcePage(pageNumber),
-		  pCachedPage(NULL)
+	SourcePage::SourcePage()
 	{
 		std::string objname("RPage");
 #ifndef WITHOUT_BOOST_UUID
@@ -85,23 +81,24 @@ namespace ospi {
 
 	SourcePage& SourcePage::operator=(const SourcePage& other)
 	{
-		pCachedPage = NULL;
-		sourceDoc = other.sourceDoc;
+		rName = other.rName;
 		sourcePage = other.sourcePage;
+		sourceDoc = other.sourceDoc;
 		targetDoc = other.targetDoc;
 		targetPage = other.targetPage;
-		resourceIndex = other.resourceIndex;
-		return *this;
+		targetTransforms = other.targetTransforms;
+		xobj = other.xobj;
+		return (*this);
 	}
 
 	SourcePage::PdfResource SourcePage::getNamedResource(const PoDoFo::PdfName& rname) const
 	{
-		if(!pCachedPage)
+		if(!sourcePage)
 			throw std::runtime_error("[SourcePage::getNamedResource] No page set");
 		// First lookup in page resource dictionary;
-		if(pCachedPage->GetResources())
+		if(sourcePage->GetResources())
 		{
-			PoDoFo::PdfDictionary&  pres(pCachedPage->GetResources()->GetDictionary());
+			PoDoFo::PdfDictionary&  pres(sourcePage->GetResources()->GetDictionary());
 			BOOST_FOREACH(PoDoFo::PdfName t, resTypes)
 			{
 				if(pres.HasKey(t))
@@ -119,7 +116,7 @@ namespace ospi {
 		}
 
 		// Then lookup parents resource dictionaries
-		PoDoFo::PdfObject *rparent = pCachedPage->GetObject()->GetDictionary().GetKey("Parent"); // parent is required for not root objects
+		PoDoFo::PdfObject *rparent = sourcePage->GetObject()->GetDictionary().GetKey("Parent"); // parent is required for not root objects
 		while ( rparent && rparent->IsDictionary() )
 		{
 			if(rparent->GetDictionary().HasKey("Resources"))
@@ -259,7 +256,7 @@ namespace ospi {
 
 	void SourcePage::extractResource()
 	{
-		PoDoFo::PdfObject * content (pCachedPage->GetContents());
+		PoDoFo::PdfObject * content (sourcePage->GetContents());
 		PoDoFo::PdfMemoryOutputStream bufferStream ( 1 );
 
 		if(content->HasStream())
@@ -276,7 +273,7 @@ namespace ospi {
 		}
 		else if(content->IsArray())
 		{
-			PoDoFo::PdfArray carray ( pCachedPage->GetContents()->GetArray() );
+			PoDoFo::PdfArray carray ( sourcePage->GetContents()->GetArray() );
 			for ( unsigned int ci = 0; ci < carray.GetSize(); ++ci )
 			{
 				if ( carray[ci].HasStream() )
@@ -374,14 +371,15 @@ namespace ospi {
 	void SourcePage::commit()
 	{
 		if(!sourceDoc)
-			throw std::runtime_error("[SourcePage::extractResource] No document set");
-		int sdgpc(sourceDoc->GetPageCount());
-		if((sourcePage < 0) ||  (sourcePage > sdgpc))
-			throw std::runtime_error("[SourcePage::extractResource] Invalid page number");
+			throw std::runtime_error("[SourcePage::commit] No source document");
+		else if(!sourcePage)
+			throw std::runtime_error("[SourcePage::commit] No source page");
+		else if(!targetDoc)
+			throw std::runtime_error("[SourcePage::commit] No target document");
+		else if(!targetPage)
+			throw std::runtime_error("[SourcePage::commit] No target page");
 
-		pCachedPage = sourceDoc->GetPage(sourcePage);
-
-		xobj = new PoDoFo::PdfXObject ( pCachedPage->GetMediaBox(), targetDoc );
+		xobj = new PoDoFo::PdfXObject ( sourcePage->GetMediaBox(), targetDoc );
 		PoDoFo::PdfVariant bbox;
 		if(cropBox.GetBottom() != 0
 				|| cropBox.GetHeight() != 0
@@ -391,18 +389,18 @@ namespace ospi {
 			cropBox.ToVariant(bbox);
 		}
 		else
-			pCachedPage->GetBleedBox().ToVariant(bbox);
+			sourcePage->GetBleedBox().ToVariant(bbox);
 
 		xobj->GetObject()->GetDictionary().AddKey(PoDoFo::PdfName("BBox"), PoDoFo::PdfObject(bbox));
 
 		PoDoFo::PdfMemoryOutputStream outMemStream ( 1 );
-		if ( pCachedPage->GetContents()->HasStream() )
+		if ( sourcePage->GetContents()->HasStream() )
 		{
-			pCachedPage->GetContents()->GetStream()->GetFilteredCopy ( &outMemStream );
+			sourcePage->GetContents()->GetStream()->GetFilteredCopy ( &outMemStream );
 		}
-		else if ( pCachedPage->GetContents()->IsArray() )
+		else if ( sourcePage->GetContents()->IsArray() )
 		{
-			PoDoFo::PdfArray carray ( pCachedPage->GetContents()->GetArray() );
+			PoDoFo::PdfArray carray ( sourcePage->GetContents()->GetArray() );
 			for ( unsigned int ci = 0; ci < carray.GetSize(); ++ci )
 			{
 				if ( carray[ci].HasStream() )
@@ -437,9 +435,9 @@ namespace ospi {
 		for ( itKey = pageKeys.begin(); itKey != pageKeys.end(); ++itKey )
 		{
 			PoDoFo::PdfName keyname ( *itKey );
-			if ( pCachedPage->GetObject()->GetDictionary().HasKey ( keyname ) )
+			if ( sourcePage->GetObject()->GetDictionary().HasKey ( keyname ) )
 			{
-				xobj->GetObject()->GetDictionary().AddKey ( keyname, migrate( pCachedPage->GetObject()->GetDictionary().GetKey ( keyname ) ) );
+				xobj->GetObject()->GetDictionary().AddKey ( keyname, migrate( sourcePage->GetObject()->GetDictionary().GetKey ( keyname ) ) );
 			}
 		}
 

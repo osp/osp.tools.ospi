@@ -69,6 +69,27 @@ namespace ospi {
 	const std::string ReaderJSONCPP::K_CropLeft = std::string("crop_left");
 	const std::string ReaderJSONCPP::K_CropTop = std::string("crop_top");
 	const std::string ReaderJSONCPP::K_Rotation = std::string("rotation");
+
+
+	bool ReaderJSONCPP::SourcePage_Key::operator< (const ReaderJSONCPP::SourcePage_Key& o) const
+	{
+		if(doc < o.doc)
+			return true;
+		else if(doc == o.doc)
+		{
+			if(pnumber < o.pnumber)
+				return true;
+			else if(pnumber == o.pnumber)
+			{
+				if(bbox.ToString() < o.bbox.ToString())
+					return true;
+				else
+					return false;
+			}
+			return false;
+		}
+		return false;
+	}
 	
 	ReaderJSONCPP::ReaderJSONCPP(const std::string& plan, const PlanParams& params)
 		:planPath(plan), params(params)
@@ -89,7 +110,7 @@ namespace ospi {
 		std::cerr<<"ADD PAGE: "<<pp<< " " << tdocument->GetPage(tpidx) <<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
-		std::map<std::string,SourcePagePtr> pDict;
+		std::map<SourcePage_Key,SourcePagePtr> pDict;
 		for (unsigned int index(0); index < slots_.size(); ++index )
 		{
 			Json::Value rec(slots_[index]);
@@ -98,7 +119,7 @@ namespace ospi {
 
 	}
 
-	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage, std::map<std::string,SourcePagePtr>& pDict)
+	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage, std::map<ReaderJSONCPP::SourcePage_Key,SourcePagePtr>& pDict)
 	{
 		// here we are!
 		std::string sdoc;
@@ -111,66 +132,65 @@ namespace ospi {
 
 		// Source PDF file
 		sdoc = slot.get(K_SlotFile, sdoc).asString();
-		bool fileIsRemote(false);
+//		bool fileIsRemote(false);
 		if(sdoc.empty())
 		{
 			Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
 			std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
 			std::vector<std::string> urlvec;
 			boost::algorithm::split( urlvec, rsdocurl, boost::algorithm::is_any_of("/"), boost::algorithm::token_compress_on );
-			sdoc = urlvec.back();
-			fileIsRemote = true;
+			bool first(true);
+			BOOST_FOREACH(const std::string& urlpart, urlvec)
+			{
+				if(first)
+					first = false;
+				else
+					sdoc.append(urlpart);
+			}
+
+//			sdoc = urlvec.back();
+//			fileIsRemote = true;
 
 		}
 
 		// Source page
 		spagenumber = slot.get(K_SlotPage, 1).asInt() - 1; // to discuss with json providers whether we go natural counting or not.
 
-		SourcePagePtr sp;
 		std::string origineName(sdoc);
 		origineName.append("#");
 		origineName.append(boost::lexical_cast<std::string>(spagenumber));
-		if(pDict.find(origineName) == pDict.end())
+
+		filesystem::path fp(sdoc.c_str());
+		if(!filesystem::exists(fp) /*|| fileIsRemote*/)
 		{
-			filesystem::path fp(sdoc.c_str());
-			if(!filesystem::exists(fp) || fileIsRemote)
-			{
 #ifdef WITH_CURL
-				// try to get it from internet
-				Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
-				std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
-				std::string rsdoctype(remote.get(K_SlotRemoteFileType, std::string("pdf")).asString());
-				if(rsdoctype != std::string("pdf"))
-					throw std::runtime_error("type of remote file is not PDF (JSONCPP)");
-				if(ospi_curl_get_file(rsdocurl.c_str(), sdoc.c_str()) > 0)
-					throw std::runtime_error("Can't fetch file from internet (JSONCPP/CURL)");
+			// try to get it from internet
+			Json::Value remote(slot.get(K_SlotRemoteFile, sdoc));
+			std::string rsdocurl(remote.get(K_SlotRemoteFileURL, std::string()).asString());
+			std::string rsdoctype(remote.get(K_SlotRemoteFileType, std::string("pdf")).asString());
+			if(rsdoctype != std::string("pdf"))
+				throw std::runtime_error("type of remote file is not PDF (JSONCPP)");
+			if(ospi_curl_get_file(rsdocurl.c_str(), sdoc.c_str()) > 0)
+				throw std::runtime_error("Can't fetch file from internet (JSONCPP/CURL)");
 #else
-				throw std::runtime_error("Can't find source PDF file (JSONCPP/CURL)");
+			throw std::runtime_error("Can't find source PDF file (JSONCPP/CURL)");
 #endif
-			}
-
-			if(sdocuments.find(sdoc) == sdocuments.end())
-			{
-				DocumentPtr d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
-				sdocuments[sdoc] = d;
-			}
-			DocumentPtr sdocptr(sdocuments[sdoc]);
-
-			if(sdocptr->GetPageCount() <= spagenumber)
-			{
-				spagenumber = sdocptr->GetPageCount() - 1;
-				std::cerr<<"Try to get non-existing page "<<std::endl;
-			}
-			sp = SourcePagePtr(new SourcePage(sdocptr.get(), spagenumber));
-			sp->setPage(tpage);
-			sp->setDoc(tdocument.get());
-			pDict[origineName] = sp;
 		}
-		else
+
+		if(sdocuments.find(sdoc) == sdocuments.end())
 		{
-			sp = pDict.find(origineName)->second;
+			DocumentPtr d(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+			sdocuments[sdoc] = d;
 		}
-		PoDoFo::PdfPage * sourcepage(sdocuments.find(sdoc)->second->GetPage(spagenumber));
+		DocumentPtr sdocptr(sdocuments[sdoc]);
+
+		if(sdocptr->GetPageCount() <= spagenumber)
+		{
+			spagenumber = sdocptr->GetPageCount() - 1;
+			std::cerr<<"Try to get non-existing page, take the last page of the document"<<std::endl;
+		}
+
+		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
 
 		// GEOMETRY
 
@@ -183,7 +203,6 @@ namespace ospi {
 		height = slot.get(K_SlotHeight, srect.GetHeight()).asDouble();
 		bottom = targetPageRect.GetHeight() - (top + height);
 		ospi::Point slotCenter(left + (width / 2.0), (targetPageRect.GetHeight() - top) - (height / 2.0));
-		std::cerr<<"slotCenter: "<<slotCenter.x<<" "<<slotCenter.y<<std::endl;
 
 		// NOTE: rotation point is the center of the cropped page
 		rotation = slot.get(K_Rotation, 0).asDouble();
@@ -197,8 +216,6 @@ namespace ospi {
 		cbottom = srect.GetHeight() - (ctop + cheight);
 
 		PoDoFo::PdfRect crop(cleft, srect.GetHeight() -( ctop + cheight), cwidth, cheight);
-		sp->setCrop(crop);
-
 
 		trx_double_t rotate(-rotation * 90.0);
 		trx_double_t scaleX(width / cwidth);
@@ -210,26 +227,36 @@ namespace ospi {
 		}
 
 		ospi::Point cropCenter((cleft + (cwidth / 2.0)) * 1.0, ((srect.GetHeight() - ctop) - (cheight / 2.0)) * 1.0);
-		std::cerr<<"cropCenter: "<<cropCenter.x<<" "<<cropCenter.y<<std::endl;
 
 		trx_double_t transX(slotCenter.x - cropCenter.x);
 		trx_double_t transY(slotCenter.y - cropCenter.y);
 
 		Transform t;
-
 		t.translate(transX, transY);
-//		std::cerr<<"translate("<< (transX) << ", " << (transY)<<")" <<" => "<<t.toCMString()<<std::endl;
-
 		t.rotate(rotate, slotCenter);
-//		std::cerr<<"rotate("<< rotate << ", Point(" << (slotCenter.x ) << ", "<<  (slotCenter.y ) <<"))" <<" => "<<t.toCMString()<<std::endl;
-
 		t.scale(scaleX, scaleY, slotCenter);
-//		std::cerr<<"scale("<< (scaleX) << ", " << (scaleY)<<")" <<" => "<<t.toCMString()<<std::endl;
+
+
+		SourcePage_Key spk(sdoc, spagenumber, crop);
+		SourcePagePtr sp;
+		if(pDict.find(spk) == pDict.end())
+		{
+			sp = SourcePagePtr(new SourcePage);
+			sp->setSourceDoc(sdocptr.get());
+			sp->setSourcePage(sourcepage);
+			sp->setTargetPage(tpage);
+			sp->setTargetDoc(tdocument.get());
+			sp->setCrop(crop);
+			pDict[spk] = sp;
+		}
+		else
+			sp = pDict.find(spk)->second;
 
 		sp->addTransform(t);
 
 		if(std::find(spages.begin(), spages.end(), sp) == spages.end())
 			spages.push_back(sp);
+
 	}
 
 	int ReaderJSONCPP::Impose()

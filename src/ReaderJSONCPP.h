@@ -31,12 +31,27 @@ namespace ospi {
 	{
 		protected:
 
+			class SourcePage_Key{
+				protected:
+					std::string doc;
+					unsigned int pnumber;
+					PoDoFo::PdfRect bbox;
+
+				public:
+					SourcePage_Key(const std::string d, unsigned int p, const PoDoFo::PdfRect& b)
+						:doc(d), pnumber(p), bbox(b){}
+					bool operator< (const SourcePage_Key& o)const;
+			};
+
 			std::string planPath;
 			PlanParams params;
 
 			std::vector<SourcePagePtr> spages;
 			std::map<std::string, DocumentPtr> sdocuments;
 			DocumentPtr tdocument;
+#ifdef WITH_CURL
+			std::vector<std::string> downloadedFiles;
+#endif
 
 			static const std::string K_OutputFile;
 			static const std::string K_Plan;
@@ -59,7 +74,7 @@ namespace ospi {
 			static const std::string K_Rotation;
 
 			void readPage(const Json::Value& page, unsigned int tpidx);
-			void readSlot(const Json::Value& slot, PoDoFo::PdfPage *tpage, std::map<std::string,SourcePagePtr>& pDict);
+			void readSlot(const Json::Value& slot, PoDoFo::PdfPage *tpage, std::map<SourcePage_Key,SourcePagePtr> &pDict);
 
 		public:
 			ReaderJSONCPP(const std::string& plan, const PlanParams& params);

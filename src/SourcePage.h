@@ -44,9 +44,7 @@ namespace ospi {
 
 			// origin
 			PoDoFo::PdfDocument * sourceDoc;
-			unsigned int sourcePage;
-			// handy
-			PoDoFo::PdfPage * pCachedPage;
+			PoDoFo::PdfPage * sourcePage;
 
 			// transformation to apply to the XObject
 			std::vector<Transform> targetTransforms;
@@ -56,7 +54,7 @@ namespace ospi {
 			// keeping the name cropbox for being agnostic
 			PoDoFo::PdfRect cropBox;
 
-			// placeholder
+			// placeholder ??
 			PoDoFo::PdfDocument * targetDoc;
 
 			// target page
@@ -65,9 +63,6 @@ namespace ospi {
 			// source page instance as xobject in target document
 			PoDoFo::PdfXObject * xobj;
 
-			// An identifier in a resource collection
-			unsigned int resourceIndex;
-
 			// return a <type, object> pair for a resource name
 			PdfResource getNamedResource(const PoDoFo::PdfName &rname) const;
 
@@ -75,23 +70,24 @@ namespace ospi {
 			PoDoFo::PdfObject* migrate(PoDoFo::PdfObject* obj);
 			void writeResource(const PoDoFo::PdfName &rname, const PdfResource &r);
 
-			SourcePage(){}
 		public:
-			SourcePage(PoDoFo::PdfDocument * doc, unsigned int pageNumber);
+			explicit SourcePage();
 			SourcePage& operator= (const SourcePage& other);
 
 			void addTransform(const Transform& t){targetTransforms.push_back(t);}
 			void setCrop(const PoDoFo::PdfRect& rect){cropBox = rect;}
-			void setDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
-			void setPage(PoDoFo::PdfPage * p){targetPage = p;}
-			void setResource(unsigned int r){resourceIndex = r;}
+			void setSourceDoc(PoDoFo::PdfDocument * d){sourceDoc = d;}
+			void setTargetDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
+			void setSourcePage(PoDoFo::PdfPage * p){sourcePage = p;}
+			void setTargetPage(PoDoFo::PdfPage * p){targetPage = p;}
 
 			const std::string& getName() const{return rName;}
 			std::vector<Transform> getTransform() const {return targetTransforms;}
 			PoDoFo::PdfRect getCrop(){return cropBox;}
-			PoDoFo::PdfDocument * getDoc() const {return targetDoc;}
-			PoDoFo::PdfPage * getPage() const {return targetPage;}
-			unsigned int getResource() const {return resourceIndex;}
+			PoDoFo::PdfDocument * getSourceDoc() const {return sourceDoc;}
+			PoDoFo::PdfDocument * getTargetDoc() const {return targetDoc;}
+			PoDoFo::PdfPage * getSourcePage() const {return sourcePage;}
+			PoDoFo::PdfPage * getTargetPage() const {return targetPage;}
 
 			// parse content stream and get required resources from source document
 			void extractResource();
