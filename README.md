@@ -63,5 +63,5 @@ The descrition of the format is as follows:
 
 #### Example:
 
-$ ospi plan_file=plan8up.json plan_type=json output_file_name=imposed_doc.pdf
+    $ ospi plan_file=plan8up.json plan_type=json output_file_name=imposed_doc.pdf
 
