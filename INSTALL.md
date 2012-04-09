@@ -24,7 +24,7 @@ If you run a Debian system, or derivative, first ensure that these dependencies 
 
 Next we need to install podofo manually, which itself has a number of dependencies:
 
-1. Install [ZLib](http://zlib.net/):
+1 - Install [ZLib](http://zlib.net/):
 
     $ cd ~/src
     $ wget http://zlib.net/zlib-1.2.6.tar.gz
@@ -34,7 +34,7 @@ Next we need to install podofo manually, which itself has a number of dependenci
     $ make
     $ sudo make install
 
-2. Install [Freetype2](http://www.freetype.org/freetype2/index.html):
+2 - Install [Freetype2](http://www.freetype.org/freetype2/index.html):
 
     $ cd ~/src
     $ (Download from site)
@@ -42,7 +42,7 @@ Next we need to install podofo manually, which itself has a number of dependenci
     $ make
     $ sudo make install
 
-3. Install [fontconfig](http://www.freedesktop.org/wiki/Software/fontconfig):
+3 - Install [fontconfig](http://www.freedesktop.org/wiki/Software/fontconfig):
 
     $ cd ~/src
     $ wget http://www.freedesktop.org/software/fontconfig/release/fontconfig-2.9.0.tar.gz
