@@ -6,10 +6,12 @@ ospi is written in C++, in order to compile it, you will need a working toolchai
 ## Dependencies
 
 ospi depends on:
+
 * PoDoFo <http://podofo.sourceforge.net/>
 * Boost <http://www.boost.org/>
 
 ospi can make use of:
+
 * libcurl <http://curl.haxx.se/libcurl/>
 * gmplib <http://gmplib.org/>
 
