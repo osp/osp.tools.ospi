@@ -61,7 +61,7 @@ And finally podofo itself:
     $ cd ./podofo
     $ mkdir build
     $ cd build
-    $ cmake ../
+    $ cmake ../ -DPODOFO_BUILD_STATIC:BOOL=FALSE  -DPODOFO_BUILD_SHARED:BOOL=TRUE
     $ make
     $ sudo make install
 
