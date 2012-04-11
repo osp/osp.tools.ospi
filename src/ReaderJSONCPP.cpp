@@ -106,15 +106,16 @@ namespace ospi {
 		if(tpagewidth <= 0.0 || tpageheight <= 0.0)
 			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 
-		PoDoFo::PdfPage * pp(tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight)));
-		std::cerr<<"ADD PAGE: "<<pp<< " " << tdocument->GetPage(tpidx) <<std::endl;
+		tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight));
+		PoDoFo::PdfPage * pp(tdocument->GetPage(tpidx));
+		std::cerr<<"ADD PAGE: "<<pp<< " " << tpidx <<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
 		std::map<SourcePage_Key,SourcePagePtr> pDict;
 		for (unsigned int index(0); index < slots_.size(); ++index )
 		{
 			Json::Value rec(slots_[index]);
-			readSlot(rec, tdocument->GetPage(tpidx), pDict);
+			readSlot(rec, pp, pDict);
 		}
 
 	}
