@@ -74,7 +74,7 @@ namespace ospi {
 			static const std::string K_Rotation;
 
 			void readPage(const Json::Value& page, unsigned int tpidx);
-			void readSlot(const Json::Value& slot, PoDoFo::PdfPage *tpage, std::map<SourcePage_Key,SourcePagePtr> &pDict);
+			void readSlot(const Json::Value& slot, unsigned int tpidx, std::map<SourcePage_Key,SourcePagePtr> &pDict);
 
 		public:
 			ReaderJSONCPP(const std::string& plan, const PlanParams& params);

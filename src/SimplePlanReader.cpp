@@ -50,8 +50,9 @@ namespace ospi {
 		unsigned int tpagenumber;
 		double tpagewidth, tpageheight;
 		double a,b,c,d,e,f;
+		double cl, cb, cw, ch;
 
-		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> tpagewidth >> tpageheight >> a >> b >> c >> d >> e >> f;
+		stream >> sdoc >> tdoc >> spagenumber >> tpagenumber >> tpagewidth >> tpageheight >> a >> b >> c >> d >> e >> f >> cl >> cb >> cw >> ch;
 		if(params.Has(InputKW))
 		{
 			if(sdoc == InputKW)
@@ -83,10 +84,13 @@ namespace ospi {
 			else
 				throw std::logic_error("Would need to create empty pages without knowing their geometry");
 		}
-		PoDoFo::PdfPage * tpage(tdocptr->GetPage(tpagenumber));
+//		PoDoFo::PdfPage * tpage(tdocptr->GetPage(tpagenumber));
 		sp->setTargetDoc(tdocptr.get());
+		sp->setSourceDoc(sdocptr.get());
+		sp->setTargetPage(tpagenumber);
+		sp->setSourcePage(spagenumber);
 		sp->addTransform(Transform(a,b,c,d,e,f));
-		sp->setTargetPage(tpage);
+		sp->setCrop(PoDoFo::PdfRect(cl,cb,cw,ch));
 
 		spages.push_back(sp);
 	}

@@ -82,10 +82,10 @@ namespace ospi {
 	SourcePage& SourcePage::operator=(const SourcePage& other)
 	{
 		rName = other.rName;
-		sourcePage = other.sourcePage;
+		sourcePageNr = other.sourcePageNr;
 		sourceDoc = other.sourceDoc;
 		targetDoc = other.targetDoc;
-		targetPage = other.targetPage;
+		targetPageNr = other.targetPageNr;
 		targetTransforms = other.targetTransforms;
 		xobj = other.xobj;
 		return (*this);
@@ -93,6 +93,7 @@ namespace ospi {
 
 	SourcePage::PdfResource SourcePage::getNamedResource(const PoDoFo::PdfName& rname) const
 	{
+		PoDoFo::PdfPage * sourcePage(sourceDoc->GetPage(sourcePageNr));
 		if(!sourcePage)
 			throw std::runtime_error("[SourcePage::getNamedResource] No page set");
 		// First lookup in page resource dictionary;
@@ -256,6 +257,7 @@ namespace ospi {
 
 	void SourcePage::extractResource()
 	{
+		PoDoFo::PdfPage * sourcePage(sourceDoc->GetPage(sourcePageNr));
 		PoDoFo::PdfObject * content (sourcePage->GetContents());
 		PoDoFo::PdfMemoryOutputStream bufferStream ( 1 );
 
@@ -370,6 +372,8 @@ namespace ospi {
 
 	void SourcePage::commit()
 	{
+		PoDoFo::PdfPage * sourcePage(sourceDoc->GetPage(sourcePageNr));
+		PoDoFo::PdfPage * targetPage(targetDoc->GetPage(targetPageNr));
 		if(!sourceDoc)
 			throw std::runtime_error("[SourcePage::commit] No source document");
 		else if(!sourcePage)

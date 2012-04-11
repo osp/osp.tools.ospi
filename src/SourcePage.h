@@ -44,7 +44,12 @@ namespace ospi {
 
 			// origin
 			PoDoFo::PdfDocument * sourceDoc;
-			PoDoFo::PdfPage * sourcePage;
+			// We can't store pointers to pages as they're subject to invalidation (without observer) when pagetree changes.
+			unsigned int sourcePageNr;
+
+			// target
+			PoDoFo::PdfDocument * targetDoc;
+			unsigned targetPageNr;
 
 			// transformation to apply to the XObject
 			std::vector<Transform> targetTransforms;
@@ -54,11 +59,6 @@ namespace ospi {
 			// keeping the name cropbox for being agnostic
 			PoDoFo::PdfRect cropBox;
 
-			// placeholder ??
-			PoDoFo::PdfDocument * targetDoc;
-
-			// target page
-			PoDoFo::PdfPage * targetPage;
 
 			// source page instance as xobject in target document
 			PoDoFo::PdfXObject * xobj;
@@ -70,6 +70,10 @@ namespace ospi {
 			PoDoFo::PdfObject* migrate(PoDoFo::PdfObject* obj);
 			void writeResource(const PoDoFo::PdfName &rname, const PdfResource &r);
 
+
+			// parse content stream and get required resources from source document
+			void extractResource();
+
 		public:
 			explicit SourcePage();
 			SourcePage& operator= (const SourcePage& other);
@@ -78,19 +82,16 @@ namespace ospi {
 			void setCrop(const PoDoFo::PdfRect& rect){cropBox = rect;}
 			void setSourceDoc(PoDoFo::PdfDocument * d){sourceDoc = d;}
 			void setTargetDoc(PoDoFo::PdfDocument * d){targetDoc = d;}
-			void setSourcePage(PoDoFo::PdfPage * p){sourcePage = p;}
-			void setTargetPage(PoDoFo::PdfPage * p){targetPage = p;}
+			void setSourcePage(unsigned int p){sourcePageNr = p;}
+			void setTargetPage(unsigned int p){targetPageNr = p;}
 
 			const std::string& getName() const{return rName;}
 			std::vector<Transform> getTransform() const {return targetTransforms;}
 			PoDoFo::PdfRect getCrop(){return cropBox;}
 			PoDoFo::PdfDocument * getSourceDoc() const {return sourceDoc;}
 			PoDoFo::PdfDocument * getTargetDoc() const {return targetDoc;}
-			PoDoFo::PdfPage * getSourcePage() const {return sourcePage;}
-			PoDoFo::PdfPage * getTargetPage() const {return targetPage;}
-
-			// parse content stream and get required resources from source document
-			void extractResource();
+			unsigned int getSourcePage() const {return sourcePageNr;}
+			unsigned int getTargetPage() const {return targetPageNr;}
 
 			// layout on target page
 			void commit();

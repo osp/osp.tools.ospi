@@ -107,20 +107,18 @@ namespace ospi {
 			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 
 		tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight));
-		PoDoFo::PdfPage * pp(tdocument->GetPage(tpidx));
-		std::cerr<<"ADD PAGE: "<<pp<< " " << tpidx <<std::endl;
 
 		const Json::Value slots_(page[K_Slots]);
 		std::map<SourcePage_Key,SourcePagePtr> pDict;
 		for (unsigned int index(0); index < slots_.size(); ++index )
 		{
 			Json::Value rec(slots_[index]);
-			readSlot(rec, pp, pDict);
+			readSlot(rec, tpidx, pDict);
 		}
 
 	}
 
-	void ReaderJSONCPP::readSlot(const Json::Value &slot, PoDoFo::PdfPage * tpage, std::map<ReaderJSONCPP::SourcePage_Key,SourcePagePtr>& pDict)
+	void ReaderJSONCPP::readSlot(const Json::Value &slot, unsigned int tpidx, std::map<ReaderJSONCPP::SourcePage_Key,SourcePagePtr>& pDict)
 	{
 		// here we are!
 		std::string sdoc;
@@ -128,6 +126,7 @@ namespace ospi {
 		double left, top, width, height, bottom;
 		double cleft, ctop, cwidth, cheight, cbottom;
 		double rotation;
+		PoDoFo::PdfPage * tpage(tdocument->GetPage(tpidx));
 
 		// IMPORTANT: the slot is already rotated. It does mean that width and height of the source document have to be compared to de-rotated slot dimensions
 
@@ -244,9 +243,9 @@ namespace ospi {
 		{
 			sp = SourcePagePtr(new SourcePage);
 			sp->setSourceDoc(sdocptr.get());
-			sp->setSourcePage(sourcepage);
-			sp->setTargetPage(tpage);
+			sp->setSourcePage(spagenumber);
 			sp->setTargetDoc(tdocument.get());
+			sp->setTargetPage(tpidx);
 			sp->setCrop(crop);
 			pDict[spk] = sp;
 		}
