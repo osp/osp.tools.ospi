@@ -43,6 +43,7 @@ namespace ospi {
 			void Add(const std::string &key, const std::string& val);
 			bool Has(const std::string& key) const;
 			bool Has(const std::vector<std::string>& keys) const;
+			std::vector<std::string> Keys() const;
 
 			std::string GetString(const std::string& key) const;
 

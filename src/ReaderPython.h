@@ -26,11 +26,25 @@
 
 #include <boost/python.hpp>
 
+#include <stdexcept>
+
 namespace ospi {
+
+	typedef std::map<std::string, boost::python::object> PyDict;
+
+	class PDFInfo
+	{
+		public:
+			PyDict extract(std::string fname);
+	};
+
 	
 	class ReaderPython : public PlanReader
 	{
 		protected:
+			static const std::string K_PDFInfo;
+
+
 			const std::string plan;
 			const PlanParams params;
 
@@ -41,10 +55,11 @@ namespace ospi {
 			void readPage(const boost::python::dict& page);
 			void readRecord(const boost::python::dict& record, DocumentPtr tdoc, int tpidx);
 
-			std::string parse_python_exception();
 		public:
 			ReaderPython(const std::string& plan, const PlanParams& params);
 			int Impose();
+
+			static std::string parse_python_exception();
 	};
 
 	class ReaderPythonCreator : public PlanReaderFactory::Creator

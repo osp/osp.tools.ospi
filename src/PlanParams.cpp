@@ -64,6 +64,17 @@ namespace ospi {
 		return true;
 	}
 
+	std::vector<std::string> PlanParams::Keys() const
+	{
+		std::vector<std::string> ret;
+		std::map<std::string, std::string>::const_iterator it;
+		for(it = pData.begin(); it != pData.end(); it++)
+		{
+			ret.push_back(it->first);
+		}
+		return ret;
+	}
+
 	std::string PlanParams::GetString(const std::string &key) const
 	{
 		if(Has(key))

@@ -21,19 +21,64 @@
 
 #include "ReaderPython.h"
 
-#include "Python.h"
-#include <boost/foreach.hpp>
-
+#include <vector>
 #include <iostream>
 
+#include "Python.h"
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
+#include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
+
+#define PYCATCH(x) \
+	try{(x);}\
+	catch(boost::python::error_already_set const &)\
+	{\
+	std::string perror_str = ReaderPython::parse_python_exception();\
+	std::cerr << "Error in Python: " << perror_str << std::endl;\
+	}
 
 
 namespace ospi {
+
+	PyDict PDFInfo::extract(std::string fname)
+	{
+		PoDoFo::PdfMemDocument doc(fname.c_str());
+		PyDict pdoc;
+
+		PYCATCH(pdoc["pdf_version"] = boost::python::object(PoDoFo::s_szPdfVersionNums[static_cast<int>(doc.GetPdfVersion())]))
+				PYCATCH(pdoc["page_count"] = boost::python::object(doc.GetPageCount()))
+				PoDoFo::PdfRect prect;
+		PyDict psize;
+		boost::python::list lsize;
+		for(int pc(0); pc < doc.GetPageCount(); ++pc)
+		{
+			PoDoFo::PdfRect cr(doc.GetPage(pc)->GetPageSize());
+			if(cr.GetBottom() != prect.GetBottom()
+					|| cr.GetHeight() != prect.GetHeight()
+					|| cr.GetLeft() != prect.GetLeft()
+					|| cr.GetWidth() != prect.GetWidth())
+			{
+				prect = cr;
+				PYCATCH(psize["left"] = boost::python::object(prect.GetLeft()))
+						PYCATCH(psize["bottom"] = boost::python::object(prect.GetBottom()))
+						PYCATCH(psize["width"] = boost::python::object(prect.GetWidth()))
+						PYCATCH(psize["height"] = boost::python::object(prect.GetHeight()))
+						PYCATCH(lsize.append(boost::python::make_tuple(pc, psize)))
+			}
+		}
+		pdoc["page_size"] = lsize;
+		return pdoc;
+	}
+
+	const std::string ReaderPython::K_PDFInfo = std::string("pdf_info");
 	
 	ReaderPython::ReaderPython(const std::string& plan, const PlanParams& params)
 		:plan(plan), params(params)
 	{
 		Py_Initialize();
+		PYCATCH(boost::python::class_<PyDict>("OSPI_PyDict").def(boost::python::map_indexing_suite<PyDict,true>()));
+		PYCATCH(boost::python::class_<PDFInfo>("PDFInfo").def("extract", &PDFInfo::extract));
+
 	}
 
 	void ReaderPython::readRecord(const boost::python::dict &record, DocumentPtr tdoc, int tpidx)
@@ -115,22 +160,69 @@ namespace ospi {
 		boost::python::object main_module = boost::python::import("__main__");
 		boost::python::object main_namespace = main_module.attr("__dict__");
 
-		boost::python::exec_file(plan.c_str(), main_namespace);
-		boost::python::list imposition = boost::python::extract<boost::python::list>(main_namespace["imposition_plan"]);
-		boost::python::ssize_t pCount = boost::python::len(imposition);
+//		PyDict rpdfInfo;
+//		if(params.Has(std::string(K_PDFInfo)))
+//		{
+//			std::vector<std::string> pdfs;
+//			std::string infostr(params.GetString(K_PDFInfo));
+//			boost::algorithm::split( pdfs, infostr, boost::algorithm::is_any_of(","), boost::algorithm::token_compress_on );
+//			BOOST_FOREACH(const std::string& pdf, pdfs)
+//			{
+//				PoDoFo::PdfMemDocument doc(pdf.c_str());
+//				PyDict pdoc;
+
+//				PYCATCH(pdoc["pdf_version"] = boost::python::object(PoDoFo::s_szPdfVersionNums[static_cast<int>(doc.GetPdfVersion())]))
+//				PYCATCH(pdoc["page_count"] = boost::python::object(doc.GetPageCount()))
+//				PoDoFo::PdfRect prect;
+//				PyDict psize;
+//				boost::python::list lsize;
+//				for(int pc(0); pc < doc.GetPageCount(); ++pc)
+//				{
+//					PoDoFo::PdfRect cr(doc.GetPage(pc)->GetPageSize());
+//					if(cr.GetBottom() != prect.GetBottom()
+//							|| cr.GetHeight() != prect.GetHeight()
+//							|| cr.GetLeft() != prect.GetLeft()
+//							|| cr.GetWidth() != prect.GetWidth())
+//					{
+//						prect = cr;
+//						PYCATCH(psize["left"] = boost::python::object(prect.GetLeft()))
+//						PYCATCH(psize["bottom"] = boost::python::object(prect.GetBottom()))
+//						PYCATCH(psize["width"] = boost::python::object(prect.GetWidth()))
+//						PYCATCH(psize["height"] = boost::python::object(prect.GetHeight()))
+//						PYCATCH(lsize.append(boost::python::make_tuple(pc, psize)))
+//					}
+//				}
+//				pdoc["page_size"] = lsize;
+
+//				PYCATCH(rpdfInfo[pdf] = boost::python::object(pdoc))
+//			}
+//		}
+		PyDict pparams;
+		BOOST_FOREACH(const std::string& pk, params.Keys())
+		{
+			PYCATCH(pparams[pk] = boost::python::object(params.GetString(pk)))
+		}
+		PyDict exported;
+		PYCATCH(exported[K_PDFInfo] = boost::python::object(new PDFInfo))
+		PYCATCH(exported["params"] = boost::python::object(pparams))
+
+		boost::python::list imposition;
+		boost::python::ssize_t pCount;
+		boost::python::object exp = boost::python::object(exported);
+		PYCATCH(boost::python::exec_file(plan.c_str(), main_namespace, exp))
+		PyDict exportReturn = boost::python::extract<PyDict>(exp);
+		for(PyDict::const_iterator it(exportReturn.begin()); it != exportReturn.end(); it++)
+		{
+			std::cerr<<"exp."<<it->first<<std::endl;
+		}
+
+		PYCATCH(imposition = boost::python::extract<boost::python::list>(exportReturn["imposition_plan"]))
+		PYCATCH(pCount = boost::python::len(imposition))
 		for(boost::python::ssize_t i(0); i < pCount; i++)
 		{
 			boost::python::object pageObject = imposition[i];
 			boost::python::dict page = boost::python::extract<boost::python::dict>(pageObject);
-			try
-			{
-				readPage(page);
-			}
-			catch(boost::python::error_already_set const &)
-			{
-				std::string perror_str = parse_python_exception();
-				std::cerr << "Error in Python: " << perror_str << std::endl;
-			}
+			PYCATCH(readPage(page))
 		}
 
 		BOOST_FOREACH(SourcePagePtr spp, spages)
