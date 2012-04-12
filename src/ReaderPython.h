@@ -19,40 +19,43 @@
  ***************************************************************************/
 
 
+#ifndef OSPI_READERPYTHON_H
+#define OSPI_READERPYTHON_H
+
 #include "PlanReader.h"
 
-#include "SimplePlanReader.h"
-#include "ReaderJSONCPP.h"
-#ifdef WITH_PYTHONREADER
-#include "ReaderPython.h"
-#endif
-
-#include <stdexcept>
+#include <boost/python.hpp>
 
 namespace ospi {
-
-	PlanReaderFactory * PlanReaderFactory::instance = NULL;
-	PlanReaderFactory::PlanReaderFactory()
+	
+	class ReaderPython : public PlanReader
 	{
-		creators[std::string("simple")] = CreatorPtr(new SimplePlanReaderCreator);
-		creators[std::string("json")] = CreatorPtr(new ReaderJSONCPPCreator);
-#ifdef WITH_PYTHONREADER
-		creators[std::string("python")] = CreatorPtr(new ReaderPythonCreator);
-#endif
-	}
+		protected:
+			const std::string plan;
+			const PlanParams params;
 
-	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan, const PlanParams &params)
+			std::vector<SourcePagePtr> spages;
+			std::map<std::string, DocumentPtr> sdocuments;
+			std::map<std::string, DocumentPtr> tdocuments;
+
+			void readPage(const boost::python::dict& page);
+			void readRecord(const boost::python::dict& record, DocumentPtr tdoc, int tpidx);
+
+			std::string parse_python_exception();
+		public:
+			ReaderPython(const std::string& plan, const PlanParams& params);
+			int Impose();
+	};
+
+	class ReaderPythonCreator : public PlanReaderFactory::Creator
 	{
-		if(instance == NULL)
-			instance = new PlanReaderFactory;
-		if(instance->creators.find(readerTS) == instance->creators.end())
-		{
-			std::string exceptMessage("Cannot find reader of type ");
-			throw std::runtime_error(exceptMessage.append(readerTS));
-		}
-
-		PlanReaderPtr preader(instance->creators[readerTS]->Create(plan, params));
-		preader->Impose();
-	}
+		public:
+			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
+			{
+				return PlanReaderPtr(new ReaderPython(plan,params));
+			}
+	};
 	
 } // namespace ospi
+
+#endif // OSPI_READERPYTHON_H

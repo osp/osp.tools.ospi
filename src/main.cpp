@@ -62,6 +62,8 @@ int main(int ac, char ** av)
 			std::string extension(res.back());
 			if(extension == std::string("json"))
 				params.Add(ospi::PlanParams::ParamPlanType, std::string("json"));
+			else if(extension == std::string("py"))
+				params.Add(ospi::PlanParams::ParamPlanType, std::string("python"));
 			// else if ...
 			else
 			{
