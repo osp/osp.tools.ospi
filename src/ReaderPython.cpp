@@ -22,8 +22,9 @@
 #include "ReaderPython.h"
 
 #include "Python.h"
-
 #include <boost/foreach.hpp>
+
+#include <iostream>
 
 
 
