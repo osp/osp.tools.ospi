@@ -72,6 +72,12 @@ namespace ospi {
 			static const std::string K_CropLeft;
 			static const std::string K_CropTop;
 			static const std::string K_Rotation;
+			static const std::string K_PageDimMod;
+			static const std::string K_CropDimMod;
+			static const std::string K_SlotDimMod;
+			static const std::string V_DimModAbsolute;
+			static const std::string V_DimModRelative;
+			static const std::string V_DimModPercent;
 
 			void readPage(const Json::Value& page, unsigned int tpidx);
 			void readSlot(const Json::Value& slot, unsigned int tpidx, std::map<SourcePage_Key,SourcePagePtr> &pDict);

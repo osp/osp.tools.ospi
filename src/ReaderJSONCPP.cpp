@@ -69,6 +69,12 @@ namespace ospi {
 	const std::string ReaderJSONCPP::K_CropLeft = std::string("crop_left");
 	const std::string ReaderJSONCPP::K_CropTop = std::string("crop_top");
 	const std::string ReaderJSONCPP::K_Rotation = std::string("rotation");
+	const std::string ReaderJSONCPP::K_PageDimMod = std::string("page_dim_mod");
+	const std::string ReaderJSONCPP::K_CropDimMod = std::string("crop_dim_mod");
+	const std::string ReaderJSONCPP::K_SlotDimMod = std::string("slot_dim_mod");
+	const std::string ReaderJSONCPP::V_DimModAbsolute = std::string("absolute");
+	const std::string ReaderJSONCPP::V_DimModRelative = std::string("relative");
+	const std::string ReaderJSONCPP::V_DimModPercent = std::string("percent");
 
 
 	bool ReaderJSONCPP::SourcePage_Key::operator< (const ReaderJSONCPP::SourcePage_Key& o) const

@@ -36,18 +36,91 @@ typedef mpf_class trx_double_t;
 
 namespace ospi {
 
-	class Point{
+	class Point
+	{
 		public:
 			trx_double_t x;
 			trx_double_t y;
 
 			Point():x(0),y(0){}
 			Point(trx_double_t x, trx_double_t y):x(x),y(y){}
+			Point& operator=(const Point& o)
+			{
+				this->x = o.x;
+				this->y = o.y;
+				return (*this);
+			}
 
 			bool IsOrigin() const
 			{
-				return ( x == 0.0 && y == 0.0);
+				return ( x == trx_double_t(0.0) && y == trx_double_t(0.0));
 			}
+	};
+
+	class Rectangle : public std::vector<Point>
+	{
+		protected:
+			enum {
+				BL = 0,
+				TL = 1,
+				TR = 2,
+				BR = 3
+			};
+
+
+		public:
+			Rectangle(){resize(4);}
+			Rectangle(const Point& c1, const Point& c2)
+			{
+				resize(4);
+				at(BL) = c1;
+				at(TR) = c2;
+				normalize();
+			}
+
+			Point bottomLeft() const {return at(BL);}
+			Point topRight() const {return at(TR);}
+			Point topLeft() const {return at(TL);}
+			Point bottomRight() const {return at(BR);}
+
+			trx_double_t width() const {return (at(BR).x - at(BL).x);}
+			trx_double_t height() const {return(at(TL).y - at(BL).y);}
+
+			void normalize()
+			{
+				Point c1(at(BL));
+				Point c2(at(TR));
+				if(c1.x <= c2.x)
+				{
+					if(c1.y <= c2.y)
+					{
+						at(BL) = c1;
+						at(TR) = c2;
+					}
+					else
+					{
+						at(BL) = Point(c1.x, c2.y);
+						at(TR) = Point(c2.x, c1.y);
+					}
+				}
+				else
+				{
+					if(c1.y <= c2.y)
+					{
+						at(BL) = Point(c2.x, c1.y);
+						at(TR) = Point(c1.x, c2.y);
+					}
+					else
+					{
+						at(BL) = c2;
+						at(TR) = c1;
+					}
+				}
+
+				at(TL) = Point(at(BL).x, at(TR).y);
+				at(BR) = Point(at(TR).x, at(BL).y);
+			}
+
 	};
 	
 	class Transform
@@ -135,7 +208,7 @@ namespace ospi {
 				m.m(2,1) = c;
 				m.m(2,2) = d;
 				m.m(3,1) = e;
-				m.m(3,2) = f	;
+				m.m(3,2) = f;
 
 			}
 
@@ -151,6 +224,10 @@ namespace ospi {
 			Transform& translate(trx_double_t dx, trx_double_t dy);
 			Transform& rotate(trx_double_t r, const Point& origin = Point());
 			Transform& scale(trx_double_t sx, trx_double_t sy, const Point& origin = Point());
+
+
+			void map(Point& p) const;
+			void map(Rectangle& r) const;
 
 
 			static Transform fromString(const std::string& tm);

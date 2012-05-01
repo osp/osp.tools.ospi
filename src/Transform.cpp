@@ -121,5 +121,23 @@ namespace ospi {
 		return (*this);
 	}
 
+	void Transform::map(Point &p) const
+	{
+		trx_double_t rx(p.x * m.m(1,1) + p.y * m.m(2,1) + m.m(3,1));
+		trx_double_t ry(p.x * m.m(1,2) + p.y * m.m(2,2) + m.m(3,2));
+
+		p.x = rx;
+		p.y = ry;
+	}
+
+	void Transform::map(Rectangle &r) const
+	{
+		for(unsigned int i(0); i < 4; ++i)
+		{
+			map(r[i]);
+		}
+		r.normalize();
+	}
+
 	
 } // namespace ospi
