@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 
 #ifndef WITH_GMP
@@ -69,15 +70,9 @@ namespace ospi {
 
 
 		public:
-			Rectangle(){resize(4);}
-			Rectangle(const Point& c1, const Point& c2)
-			{
-				resize(4);
-				at(BL) = c1;
-				at(TR) = c2;
-				normalize();
-			}
-
+			Rectangle();
+			Rectangle(const Point& c1, const Point& c2);
+			const Rectangle& operator =(const Rectangle& o);
 			Point bottomLeft() const {return at(BL);}
 			Point topRight() const {return at(TR);}
 			Point topLeft() const {return at(TL);}
@@ -86,40 +81,9 @@ namespace ospi {
 			trx_double_t width() const {return (at(BR).x - at(BL).x);}
 			trx_double_t height() const {return(at(TL).y - at(BL).y);}
 
-			void normalize()
-			{
-				Point c1(at(BL));
-				Point c2(at(TR));
-				if(c1.x <= c2.x)
-				{
-					if(c1.y <= c2.y)
-					{
-						at(BL) = c1;
-						at(TR) = c2;
-					}
-					else
-					{
-						at(BL) = Point(c1.x, c2.y);
-						at(TR) = Point(c2.x, c1.y);
-					}
-				}
-				else
-				{
-					if(c1.y <= c2.y)
-					{
-						at(BL) = Point(c2.x, c1.y);
-						at(TR) = Point(c1.x, c2.y);
-					}
-					else
-					{
-						at(BL) = c2;
-						at(TR) = c1;
-					}
-				}
-
-				at(TL) = Point(at(BL).x, at(TR).y);
-				at(BR) = Point(at(TR).x, at(BL).y);
-			}
+			Rectangle unite(const Rectangle& o);
+			Rectangle& united(const Rectangle& o);
+			Rectangle& normalize();
 
 	};
 	

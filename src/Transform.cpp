@@ -26,6 +26,80 @@
 
 namespace ospi {
 
+
+	Rectangle::Rectangle()
+	{
+		resize(4);
+	}
+
+	Rectangle::Rectangle(const Point& c1, const Point& c2)
+	{
+		resize(4);
+		at(BL) = c1;
+		at(TR) = c2;
+		normalize();
+	}
+
+	Rectangle Rectangle::unite(const Rectangle &o)
+	{
+		Rectangle r(*this);
+		r.at(BL) = Point(std::min(at(BL).x, o.at(BL).x), std::min(at(BL).y, o.at(BL).y));
+		r.at(TR) = Point(std::max(at(TR).x, o.at(TR).x), std::max(at(TR).y, o.at(TR).y));
+		return Rectangle(r.normalize());
+	}
+
+	Rectangle& Rectangle::united(const Rectangle &o)
+	{
+		this->operator =(unite(o));
+		return (*this);
+	}
+
+	Rectangle& Rectangle::normalize()
+	{
+		Point c1(at(BL));
+		Point c2(at(TR));
+		if(c1.x <= c2.x)
+		{
+			if(c1.y <= c2.y)
+			{
+				at(BL) = c1;
+				at(TR) = c2;
+			}
+			else
+			{
+				at(BL) = Point(c1.x, c2.y);
+				at(TR) = Point(c2.x, c1.y);
+			}
+		}
+		else
+		{
+			if(c1.y <= c2.y)
+			{
+				at(BL) = Point(c2.x, c1.y);
+				at(TR) = Point(c1.x, c2.y);
+			}
+			else
+			{
+				at(BL) = c2;
+				at(TR) = c1;
+			}
+		}
+
+		at(TL) = Point(at(BL).x, at(TR).y);
+		at(BR) = Point(at(TR).x, at(BL).y);
+
+		return (*this);
+	}
+
+	const Rectangle& Rectangle::operator =(const Rectangle& o)
+	{
+		resize(4);
+		for(unsigned int i(0); i < 4; i++)
+		{
+			at(i) = o.at(i);
+		}
+	}
+
 	Transform Transform::fromString(const std::string &tm)
 	{
 		// TODO - if found useful

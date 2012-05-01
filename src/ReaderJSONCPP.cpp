@@ -110,7 +110,14 @@ namespace ospi {
 		tpagewidth = page.get(K_TargetWidth, tpagewidth).asDouble();
 		tpageheight = page.get(K_TargetHeight, tpageheight).asDouble();
 		if(tpagewidth <= 0.0 || tpageheight <= 0.0)
-			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
+		{
+			Rectangle r;
+			templatePage(page, r);
+			tpagewidth = r.width();
+			tpageheight = r.height();
+			std::cerr<<"Computed target page: w = "<<tpagewidth<<" ; h = "<<tpageheight<<std::endl;
+//			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
+		}
 
 		tdocument->CreatePage(PoDoFo::PdfRect(0,0,tpagewidth,tpageheight));
 
@@ -124,6 +131,81 @@ namespace ospi {
 
 	}
 
+	void ReaderJSONCPP::templatePage(const Json::Value &page, Rectangle &rect)
+	{
+		const Json::Value slots_(page[K_Slots]);
+		for (unsigned int index(0); index < slots_.size(); ++index )
+		{
+			Json::Value slot(slots_[index]);
+			std::string sdoc;
+			unsigned int spagenumber;
+			double left, top, width, height;
+			double cleft, ctop, cwidth, cheight, cbottom;
+			double rotation(slot.get(K_Rotation, 0).asDouble());
+			std::string slotDimMod(slot.get(K_SlotDimMod, V_DimModAbsolute).asString());
+			std::string cropDimMod(slot.get(K_CropDimMod, V_DimModAbsolute).asString());
+
+			sdoc = slot.get(K_SlotFile, sdoc).asString();
+			spagenumber = slot.get(K_SlotPage, 1).asInt() - 1;
+			DocumentPtr sdocptr(new PoDoFo::PdfMemDocument(sdoc.c_str()));
+			PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(std::min(int(spagenumber), sdocptr->GetPageCount() - 1)));
+
+			PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
+			PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
+
+			if(cropDimMod == V_DimModAbsolute)
+			{
+				cleft = slot.get(K_CropLeft,crect.GetLeft()).asDouble();
+				ctop = slot.get(K_CropTop, srect.GetHeight() -(crect.GetBottom() + crect.GetHeight())).asDouble();
+				cwidth = slot.get(K_CropWidth,crect.GetWidth()).asDouble();
+				cheight = slot.get(K_CropHeight, crect.GetHeight()).asDouble();
+			}
+			else if(cropDimMod == V_DimModRelative)
+			{
+				cleft = crect.GetLeft() + slot.get(K_CropLeft, 0).asDouble();
+				ctop = (srect.GetHeight() - (crect.GetBottom() + crect.GetHeight())) + slot.get(K_CropTop, 0).asDouble();
+				cwidth = crect.GetWidth() + slot.get(K_CropWidth,0).asDouble();
+				cheight = crect.GetHeight() + slot.get(K_CropHeight, 0).asDouble();
+			}
+			else if(cropDimMod == V_DimModPercent)
+			{
+				cleft = srect.GetLeft() + (srect.GetWidth() * (slot.get(K_CropLeft,100.0).asDouble() / 100.0));
+				ctop = (srect.GetBottom() + srect.GetHeight()) - (srect.GetHeight() * (slot.get(K_CropTop, 100.0).asDouble() / 100.0));
+				cwidth =  srect.GetWidth() * (slot.get(K_CropWidth,100.0).asDouble() / 100.0);
+				cheight = srect.GetHeight() * (slot.get(K_CropHeight, 100.0).asDouble() / 100.0);
+			}
+
+			left = slot.get(K_SlotLeft, 0).asDouble();
+			top = slot.get(K_SlotTop, 0).asDouble();
+			if(slotDimMod == V_DimModAbsolute)
+			{
+				width = slot.get(K_SlotWidth,cwidth).asDouble();
+				height = slot.get(K_SlotHeight, cheight).asDouble();
+			}
+			else if(slotDimMod == V_DimModRelative)
+			{
+				width = cwidth + slot.get(K_SlotWidth,0).asDouble();
+				height = cheight + slot.get(K_SlotHeight,0).asDouble();
+			}
+			else if(slotDimMod == V_DimModPercent)
+			{
+				width = cwidth *( slot.get(K_SlotWidth,100.0).asDouble() / 100.0);
+				height = cheight *( slot.get(K_SlotHeight,100.0).asDouble() / 100.0);
+			}
+
+			if(rotation == 1 || rotation == 3)
+			{
+				double tmpW = width;
+				width = height;
+				height = tmpW;
+			}
+
+			Rectangle slotRect(Point(left, top), Point(left+width, top+height));
+			rect.united(slotRect);
+
+		}
+	}
+
 	void ReaderJSONCPP::readSlot(const Json::Value &slot, unsigned int tpidx, std::map<ReaderJSONCPP::SourcePage_Key,SourcePagePtr>& pDict)
 	{
 		// here we are!
@@ -133,6 +215,8 @@ namespace ospi {
 		double cleft, ctop, cwidth, cheight, cbottom;
 		double rotation;
 		PoDoFo::PdfPage * tpage(tdocument->GetPage(tpidx));
+		std::string slotDimMod(slot.get(K_SlotDimMod, V_DimModAbsolute).asString());
+		std::string cropDimMod(slot.get(K_CropDimMod, V_DimModAbsolute).asString());
 
 		// IMPORTANT: the slot is already rotated. It does mean that width and height of the source document have to be compared to de-rotated slot dimensions
 
@@ -200,26 +284,80 @@ namespace ospi {
 
 		// GEOMETRY
 
-		PoDoFo::PdfRect targetPageRect(tpage->GetMediaBox());
-
-		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
-		left = slot.get(K_SlotLeft, 0).asDouble();
-		top = slot.get(K_SlotTop, 0).asDouble();
-		width = slot.get(K_SlotWidth,srect.GetWidth()).asDouble();
-		height = slot.get(K_SlotHeight, srect.GetHeight()).asDouble();
-		bottom = targetPageRect.GetHeight() - (top + height);
-		ospi::Point slotCenter(left + (width / 2.0), (targetPageRect.GetHeight() - top) - (height / 2.0));
-
 		// NOTE: rotation point is the center of the cropped page
 		rotation = slot.get(K_Rotation, 0).asDouble();
 
-		// We get default values from
+		PoDoFo::PdfRect targetPageRect(tpage->GetMediaBox());
+
+		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
 		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
-		cleft = slot.get(K_CropLeft,crect.GetLeft()).asDouble();
-		ctop = slot.get(K_CropTop, srect.GetHeight() -(crect.GetBottom() + crect.GetHeight())).asDouble();
-		cwidth = slot.get(K_CropWidth,crect.GetWidth()).asDouble();
-		cheight = slot.get(K_CropHeight, crect.GetHeight()).asDouble();
-		cbottom = srect.GetHeight() - (ctop + cheight);
+
+
+		if(cropDimMod == V_DimModAbsolute)
+		{
+			cleft = slot.get(K_CropLeft,crect.GetLeft()).asDouble();
+			ctop = slot.get(K_CropTop, srect.GetHeight() -(crect.GetBottom() + crect.GetHeight())).asDouble();
+			cwidth = slot.get(K_CropWidth,crect.GetWidth()).asDouble();
+			cheight = slot.get(K_CropHeight, crect.GetHeight()).asDouble();
+		}
+		else if(cropDimMod == V_DimModRelative)
+		{
+			cleft = crect.GetLeft() + slot.get(K_CropLeft, 0).asDouble();
+			ctop = (srect.GetHeight() - (crect.GetBottom() + crect.GetHeight())) + slot.get(K_CropTop, 0).asDouble();
+			cwidth = crect.GetWidth() + slot.get(K_CropWidth,0).asDouble();
+			cheight = crect.GetHeight() + slot.get(K_CropHeight, 0).asDouble();
+		}
+		else if(cropDimMod == V_DimModPercent)
+		{
+			// here it makes it too much convoluted to use the given BleedBox, let's assume the effect is to crop to some percentage of the MediaBox
+			cleft = srect.GetLeft() + (srect.GetWidth() * (slot.get(K_CropLeft,100.0).asDouble() / 100.0));
+			ctop = (srect.GetBottom() + srect.GetHeight()) - (srect.GetHeight() * (slot.get(K_CropTop, 100.0).asDouble() / 100.0));
+			cwidth =  srect.GetWidth() * (slot.get(K_CropWidth,100.0).asDouble() / 100.0);
+			cheight = srect.GetHeight() * (slot.get(K_CropHeight, 100.0).asDouble() / 100.0);
+		}
+//		cbottom = srect.GetHeight() - (ctop + cheight);
+
+		left = slot.get(K_SlotLeft, 0).asDouble();
+		top = slot.get(K_SlotTop, 0).asDouble();
+		if(rotation == 1 || rotation == 3)
+		{
+			if(slotDimMod == V_DimModAbsolute)
+			{
+				height = slot.get(K_SlotWidth, cwidth).asDouble();
+				width = slot.get(K_SlotHeight, cheight).asDouble();
+			}
+			else if(slotDimMod == V_DimModRelative)
+			{
+				height = cwidth + slot.get(K_SlotWidth, 0).asDouble();
+				width = cheight + slot.get(K_SlotHeight, 0).asDouble();
+			}
+			else if(slotDimMod == V_DimModPercent)
+			{
+				height = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
+				width = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+			}
+		}
+		else
+		{
+			if(slotDimMod == V_DimModAbsolute)
+			{
+				width = slot.get(K_SlotWidth, cwidth).asDouble();
+				height = slot.get(K_SlotHeight, cheight).asDouble();
+			}
+			else if(slotDimMod == V_DimModRelative)
+			{
+				width = cwidth + slot.get(K_SlotWidth, 0).asDouble();
+				height = cheight + slot.get(K_SlotHeight, 0).asDouble();
+			}
+			else if(slotDimMod == V_DimModPercent)
+			{
+				width = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
+				height = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+			}
+		}
+		bottom = targetPageRect.GetHeight() - (top + height);
+		ospi::Point slotCenter(left + (width / 2.0), (targetPageRect.GetHeight() - top) - (height / 2.0));
+
 
 		PoDoFo::PdfRect crop(cleft, srect.GetHeight() -( ctop + cheight), cwidth, cheight);
 

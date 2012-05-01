@@ -82,6 +82,9 @@ namespace ospi {
 			void readPage(const Json::Value& page, unsigned int tpidx);
 			void readSlot(const Json::Value& slot, unsigned int tpidx, std::map<SourcePage_Key,SourcePagePtr> &pDict);
 
+			// Compute page size when they're missing from the json data
+			void templatePage(const Json::Value& page, Rectangle& rect);
+
 		public:
 			ReaderJSONCPP(const std::string& plan, const PlanParams& params);
 			int Impose();
