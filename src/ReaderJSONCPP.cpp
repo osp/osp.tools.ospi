@@ -75,6 +75,7 @@ namespace ospi {
 	const std::string ReaderJSONCPP::V_DimModAbsolute = std::string("absolute");
 	const std::string ReaderJSONCPP::V_DimModRelative = std::string("relative");
 	const std::string ReaderJSONCPP::V_DimModPercent = std::string("percent");
+	const std::string ReaderJSONCPP::K_BleedExpand = std::string("bleed_extension");
 
 
 	bool ReaderJSONCPP::SourcePage_Key::operator< (const ReaderJSONCPP::SourcePage_Key& o) const
@@ -107,8 +108,27 @@ namespace ospi {
 	{
 		double tpagewidth(0);
 		double tpageheight(0);
-		tpagewidth = page.get(K_TargetWidth, tpagewidth).asDouble();
-		tpageheight = page.get(K_TargetHeight, tpageheight).asDouble();
+		std::string pageDimMod(page.get(K_PageDimMod, V_DimModAbsolute).asString());
+		if(pageDimMod == V_DimModAbsolute)
+		{
+			tpagewidth = page.get(K_TargetWidth, tpagewidth).asDouble();
+			tpageheight = page.get(K_TargetHeight, tpageheight).asDouble();
+		}
+		else if(pageDimMod == V_DimModRelative)
+		{
+			Rectangle r;
+			templatePage(page, r);
+			tpagewidth = r.width() + page.get(K_TargetWidth, 0).asDouble();
+			tpageheight = r.height() + page.get(K_TargetHeight, 0).asDouble();
+		}
+		else if(pageDimMod == V_DimModPercent)
+		{
+			Rectangle r;
+			templatePage(page, r);
+			tpagewidth = r.width() * (page.get(K_TargetWidth, 100.0).asDouble() / 100.0);
+			tpageheight = r.height() + (page.get(K_TargetHeight, 100.0).asDouble() / 100.0);
+		}
+
 		if(tpagewidth <= 0.0 || tpageheight <= 0.0)
 		{
 			Rectangle r;
@@ -174,6 +194,12 @@ namespace ospi {
 				cwidth =  srect.GetWidth() * (slot.get(K_CropWidth,100.0).asDouble() / 100.0);
 				cheight = srect.GetHeight() * (slot.get(K_CropHeight, 100.0).asDouble() / 100.0);
 			}
+
+			double bleedExpand = slot.get(K_BleedExpand, 0).asDouble();
+			cleft -= bleedExpand;
+			ctop -= bleedExpand;
+			cwidth += 2.0 * bleedExpand;
+			cheight += 2.0 * bleedExpand;
 
 			left = slot.get(K_SlotLeft, 0).asDouble();
 			top = slot.get(K_SlotTop, 0).asDouble();
@@ -288,7 +314,6 @@ namespace ospi {
 		rotation = slot.get(K_Rotation, 0).asDouble();
 
 		PoDoFo::PdfRect targetPageRect(tpage->GetMediaBox());
-
 		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
 		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
 
@@ -316,6 +341,12 @@ namespace ospi {
 			cheight = srect.GetHeight() * (slot.get(K_CropHeight, 100.0).asDouble() / 100.0);
 		}
 //		cbottom = srect.GetHeight() - (ctop + cheight);
+
+		double bleedExpand = slot.get(K_BleedExpand, 0).asDouble();
+		cleft -= bleedExpand;
+		ctop -= bleedExpand;
+		cwidth += 2.0 * bleedExpand;
+		cheight += 2.0 * bleedExpand;
 
 		left = slot.get(K_SlotLeft, 0).asDouble();
 		top = slot.get(K_SlotTop, 0).asDouble();
