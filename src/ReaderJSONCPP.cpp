@@ -170,7 +170,7 @@ namespace ospi {
 			PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(std::min(int(spagenumber), sdocptr->GetPageCount() - 1)));
 
 			PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
-			PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
+			PoDoFo::PdfRect crect(sourcepage->GetCropBox());
 
 			if(cropDimMod == V_DimModAbsolute)
 			{
@@ -309,7 +309,7 @@ namespace ospi {
 
 		PoDoFo::PdfRect targetPageRect(tpage->GetMediaBox());
 		PoDoFo::PdfRect srect(sourcepage->GetMediaBox());
-		PoDoFo::PdfRect crect(sourcepage->GetBleedBox());
+		PoDoFo::PdfRect crect(sourcepage->GetCropBox());
 
 
 		if(cropDimMod == V_DimModAbsolute)
