@@ -28,6 +28,7 @@
 namespace ospi {
 
 	const std::string PlanParams::ParamPlanFile = std::string("plan_file");
+	const std::string PlanParams::ParamPlanData = std::string("plan_data");
 	const std::string PlanParams::ParamPlanType = std::string("plan_type");
 	
 	PlanParams::PlanParams()

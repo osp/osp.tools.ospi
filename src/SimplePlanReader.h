@@ -51,7 +51,7 @@ namespace ospi {
 			void readRecord(const std::string& rec);
 
 		public:
-			SimplePlanReader(const std::string& plan, const PlanParams& params);
+			SimplePlanReader(const std::string& plan, const PlanParams& params, bool isData);
 
 			int Impose();
 	};
@@ -59,9 +59,9 @@ namespace ospi {
 	class SimplePlanReaderCreator : public PlanReaderFactory::Creator
 	{
 		public:
-			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
+			PlanReaderPtr Create(const std::string& plan, const PlanParams& params, bool isData)
 			{
-				return PlanReaderPtr(new SimplePlanReader(plan,params));
+				return PlanReaderPtr(new SimplePlanReader(plan,params,isData));
 			}
 	};
 	

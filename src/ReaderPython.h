@@ -56,7 +56,7 @@ namespace ospi {
 			void readRecord(const boost::python::dict& record, DocumentPtr tdoc, int tpidx);
 
 		public:
-			ReaderPython(const std::string& plan, const PlanParams& params);
+			ReaderPython(const std::string& plan, const PlanParams& params, bool isData);
 			int Impose();
 
 			static std::string parse_python_exception();
@@ -65,9 +65,9 @@ namespace ospi {
 	class ReaderPythonCreator : public PlanReaderFactory::Creator
 	{
 		public:
-			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
+			PlanReaderPtr Create(const std::string& plan, const PlanParams& params, bool isData)
 			{
-				return PlanReaderPtr(new ReaderPython(plan,params));
+				return PlanReaderPtr(new ReaderPython(plan,params,isData));
 			}
 	};
 	

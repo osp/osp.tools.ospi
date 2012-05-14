@@ -58,7 +58,7 @@ namespace ospi {
 				public:
 					Creator(){}
 					virtual ~Creator(){}
-					virtual PlanReaderPtr Create(const std::string& plan, const PlanParams& params) = 0;
+					virtual PlanReaderPtr Create(const std::string& plan, const PlanParams& params, bool isData) = 0;
 			};
 
 		protected:
@@ -69,7 +69,7 @@ namespace ospi {
 			std::map<std::string, CreatorPtr> creators;
 
 		public:
-			static int Impose(const std::string& readerTS, const std::string& plan, const PlanParams& params);
+			static int Impose(const std::string& readerTS, const std::string& plan, const PlanParams& params, bool isData);
 
 	};
 	

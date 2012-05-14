@@ -35,7 +35,7 @@ namespace ospi {
 	const std::string SimplePlanReader::InputKW = std::string("INPUT");
 	const std::string SimplePlanReader::OutputKW = std::string("OUTPUT");
 
-	SimplePlanReader::SimplePlanReader(const std::string& plan, const PlanParams& params)
+	SimplePlanReader::SimplePlanReader(const std::string& plan, const PlanParams& params, bool isData)
 		:planPath(plan), params(params)
 	{
 	}

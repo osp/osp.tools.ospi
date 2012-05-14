@@ -44,37 +44,48 @@ int main(int ac, char ** av)
 		params.Add(std::string(av[i]));
 	}
 
-	if(!params.Has(ospi::PlanParams::ParamPlanFile))
+	if(!params.Has(ospi::PlanParams::ParamPlanFile) && !params.Has(ospi::PlanParams::ParamPlanData))
 	{
-		std::cerr<<"You must provide an imposition plan file path argument."<<std::endl;
+		std::cerr<<"You must provide an imposition plan file path argument, or plan data."<<std::endl;
 		return 2;
 	}
 	if(!params.Has(ospi::PlanParams::ParamPlanType))
 	{
-		// try to guess the type by the extension of the plan file
-		std::vector<std::string> res;
-		std::string planfile(params.GetString(ospi::PlanParams::ParamPlanFile));
-		boost::algorithm::split( res, planfile , boost::algorithm::is_any_of("."), boost::algorithm::token_compress_on );
-		if(res.size() == 1) // no extension, we assume it's a simple plan
-			params.Add(ospi::PlanParams::ParamPlanType, std::string("simple"));
-		else
+		if(params.Has(ospi::PlanParams::ParamPlanFile))
 		{
-			std::string extension(res.back());
-			if(extension == std::string("json"))
-				params.Add(ospi::PlanParams::ParamPlanType, std::string("json"));
-			else if(extension == std::string("py"))
-				params.Add(ospi::PlanParams::ParamPlanType, std::string("python"));
-			// else if ...
+			// try to guess the type by the extension of the plan file
+			std::vector<std::string> res;
+			std::string planfile(params.GetString(ospi::PlanParams::ParamPlanFile));
+			boost::algorithm::split( res, planfile , boost::algorithm::is_any_of("."), boost::algorithm::token_compress_on );
+			if(res.size() == 1) // no extension, we assume it's a simple plan
+				params.Add(ospi::PlanParams::ParamPlanType, std::string("simple"));
 			else
 			{
-				std::cerr<<"Unknown extension and no plan type provided, stop here."<<std::endl;
-				return 3;
+				std::string extension(res.back());
+				if(extension == std::string("json"))
+					params.Add(ospi::PlanParams::ParamPlanType, std::string("json"));
+				else if(extension == std::string("py"))
+					params.Add(ospi::PlanParams::ParamPlanType, std::string("python"));
+				// else if ...
+				else
+				{
+					std::cerr<<"Unknown extension and no plan type provided, stop here."<<std::endl;
+					return 3;
+				}
 			}
+		}
+		else
+		{
+			std::cerr<<"Cannot guess type of the plan data, please provide plan data type"<<std::endl;
+			return 3;
 		}
 
 	}
 
-	ospi::PlanReaderFactory::Impose(params.GetString(ospi::PlanParams::ParamPlanType), params.GetString(ospi::PlanParams::ParamPlanFile), params);
+	if(params.Has(ospi::PlanParams::ParamPlanData))
+		ospi::PlanReaderFactory::Impose(params.GetString(ospi::PlanParams::ParamPlanType), params.GetString(ospi::PlanParams::ParamPlanData), params, true);
+	else
+		ospi::PlanReaderFactory::Impose(params.GetString(ospi::PlanParams::ParamPlanType), params.GetString(ospi::PlanParams::ParamPlanFile), params, false);
 
 	return 0;
 }

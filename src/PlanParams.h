@@ -33,6 +33,7 @@ namespace ospi {
 	{
 		public:
 			static const std::string ParamPlanFile;
+			static const std::string ParamPlanData;
 			static const std::string ParamPlanType;
 		protected:
 			std::map<std::string, std::string> pData;

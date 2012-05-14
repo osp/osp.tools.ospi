@@ -72,7 +72,7 @@ namespace ospi {
 
 	const std::string ReaderPython::K_PDFInfo = std::string("pdf_info");
 	
-	ReaderPython::ReaderPython(const std::string& plan, const PlanParams& params)
+	ReaderPython::ReaderPython(const std::string& plan, const PlanParams& params, bool isData)
 		:plan(plan), params(params)
 	{
 		Py_Initialize();

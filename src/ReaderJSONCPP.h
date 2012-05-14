@@ -45,6 +45,7 @@ namespace ospi {
 
 			std::string planPath;
 			PlanParams params;
+			bool optIsData;
 
 			std::vector<SourcePagePtr> spages;
 			std::map<std::string, DocumentPtr> sdocuments;
@@ -85,17 +86,19 @@ namespace ospi {
 			// Compute page size when they're missing from the json data
 			void templatePage(const Json::Value& page, Rectangle& rect);
 
+			std::string getPlanData(std::istream& in);
+
 		public:
-			ReaderJSONCPP(const std::string& plan, const PlanParams& params);
+			ReaderJSONCPP(const std::string& plan, const PlanParams& params, bool isData);
 			int Impose();
 	};
 
 	class ReaderJSONCPPCreator : public PlanReaderFactory::Creator
 	{
 		public:
-			PlanReaderPtr Create(const std::string& plan, const PlanParams& params)
+			PlanReaderPtr Create(const std::string& plan, const PlanParams& params, bool isData)
 			{
-				return PlanReaderPtr(new ReaderJSONCPP(plan,params));
+				return PlanReaderPtr(new ReaderJSONCPP(plan,params,isData));
 			}
 	};
 } // namespace ospi

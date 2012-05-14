@@ -25,6 +25,7 @@
 #include <cmath>
 #include <fstream>
 #include <stdexcept>
+#include <iostream>
 
 #include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
@@ -46,6 +47,8 @@ extern "C"{
 int ospi_curl_get_file(const char * url, const char * filename);
 }
 #endif
+
+#define OSPI_BUFFER_CHUNK_SIZE 256
 
 
 namespace ospi {
@@ -97,8 +100,8 @@ namespace ospi {
 		return false;
 	}
 	
-	ReaderJSONCPP::ReaderJSONCPP(const std::string& plan, const PlanParams& params)
-		:planPath(plan), params(params)
+	ReaderJSONCPP::ReaderJSONCPP(const std::string& plan, const PlanParams& params, bool isData)
+		:planPath(plan), params(params), optIsData(isData)
 	{
 
 	}
@@ -424,19 +427,51 @@ namespace ospi {
 
 	}
 
+
+	std::string ReaderJSONCPP::getPlanData(std::istream &in)
+	{
+
+		std::vector< boost::shared_ptr<char> > bufVec;
+		int tlen(0);
+		int chunkCount(0);
+		while(in.good())
+		{
+			boost::shared_ptr<char> pbuf(new char[OSPI_BUFFER_CHUNK_SIZE]);
+			in.read(pbuf.get(), OSPI_BUFFER_CHUNK_SIZE);
+			bufVec.push_back(pbuf);
+			tlen += in.gcount();
+			chunkCount++;
+
+		}
+		if(tlen == 0)
+			throw std::runtime_error ( "Failed to read plan data" );
+
+		int bufSize((chunkCount * OSPI_BUFFER_CHUNK_SIZE) + 1);
+		boost::shared_ptr<char> buffer(new char[bufSize]);
+		memset(buffer.get(), '\0', bufSize);
+		unsigned int bufVecSize(bufVec.size());
+		for(unsigned int i(0); i < bufVecSize; i++)
+		{
+			memcpy(buffer.get() + (i * OSPI_BUFFER_CHUNK_SIZE), bufVec[i].get(), OSPI_BUFFER_CHUNK_SIZE);
+		}
+		return std::string(buffer.get(), tlen);
+	}
+
 	int ReaderJSONCPP::Impose()
 	{
-		std::ifstream in ( planPath.c_str(), std::ifstream::in );
-		if ( !in.good() )
-			throw std::runtime_error ( "Failed to open plan file" );
-
-		// How that's ugly
-		in.seekg (0, std::ios::end);
-		int length = in.tellg();
-		in.seekg (0, std::ios::beg);
-		boost::shared_ptr<char> buffer(new char [length]);
-		in.read(buffer.get(), length);
-		std::string jsondata(buffer.get(), length);
+		std::string jsondata;
+		if(!optIsData)
+		{
+			if(planPath == std::string("-"))
+				jsondata = getPlanData(std::cin);
+			else
+			{
+				std::ifstream in( planPath.c_str(), std::ifstream::in );
+				jsondata = getPlanData(in);
+			}
+		}
+		else
+			jsondata = planPath;
 
 		Json::Value root;
 		Json::Reader reader;

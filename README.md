@@ -8,11 +8,15 @@ ospi is a Free software released under GPLv3
 ## Invocation
 
 ospi takes all its parameters in the form of key=value pairs. The only required
-key is "plan_file" which indicates to the program which imposition file to
+key is "plan_file" or "plan_data" which indicates to the program which imposition file or data to
 process. An optional key goes for "plan_type" to instruct the program on which
 plan reader it should call to process the plan file. If this key is missing, it
 will try to guess based on the extension of the plan filename. All other parameters 
 are specific to each plan reader.
+If "plan_file" value is "-", standard input will be processed.
+If reading from standard input or with "plan_data", you MUST indicates the type of the plan.
+
+
 
 
 ospi processes imposition plan files in:
@@ -61,7 +65,11 @@ The descrition of the format is as follows:
       ]
     }
 
-#### Example:
+#### Examples:
 
     $ ospi plan_file=plan8up.json plan_type=json output_file_name=imposed_doc.pdf
+    
+    $ cat plan8up.json | ospi plan_type=json output_file_name=imposed_doc.pdf plan_file=-
+    
+    $ ospi plan_type=json output_file_name=imposed_doc.pdf plan_data='{"plan":[{"slots":[{"page":1,"crop_dim_mod":"relative","crop_width":20,"crop_height":20,"crop_left":-10,"crop_top":-10,"file":"a.pdf","rotation":3}]}]}'
 

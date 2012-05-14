@@ -41,7 +41,7 @@ namespace ospi {
 #endif
 	}
 
-	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan, const PlanParams &params)
+	int PlanReaderFactory::Impose(const std::string &readerTS, const std::string &plan, const PlanParams &params, bool isData)
 	{
 		if(instance == NULL)
 			instance = new PlanReaderFactory;
@@ -51,7 +51,7 @@ namespace ospi {
 			throw std::runtime_error(exceptMessage.append(readerTS));
 		}
 
-		PlanReaderPtr preader(instance->creators[readerTS]->Create(plan, params));
+		PlanReaderPtr preader(instance->creators[readerTS]->Create(plan, params, isData));
 		preader->Impose();
 	}
 	
