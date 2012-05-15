@@ -76,7 +76,7 @@ namespace ospi {
 #endif
 		rName = objname;
 
-		std::cerr<<"SourcePage: "<< rName << std::endl;
+//		std::cerr<<"SourcePage: "<< rName << std::endl;
 	}
 
 	SourcePage& SourcePage::operator=(const SourcePage& other)

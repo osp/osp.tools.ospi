@@ -31,6 +31,9 @@
 
 int main(int ac, char ** av)
 {
+	PoDoFo::PdfError::EnableDebug ( false );
+	PoDoFo::PdfError::EnableLogging ( false );
+
 	if(ac == 1)
 	{
 		std::cerr<<"Usage: "<<av[0]<< " " << ospi::PlanParams::ParamPlanFile << "=your_plan_file ["

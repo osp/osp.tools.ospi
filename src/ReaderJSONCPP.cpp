@@ -137,7 +137,7 @@ namespace ospi {
 			templatePage(page, r);
 			tpagewidth = r.width();
 			tpageheight = r.height();
-			std::cerr<<"Computed target page: w = "<<tpagewidth<<" ; h = "<<tpageheight<<std::endl;
+//			std::cerr<<"Computed target page: w = "<<tpagewidth<<" ; h = "<<tpageheight<<std::endl;
 //			throw std::runtime_error("Invalid target page geometry (JSONCPP)");
 		}
 
@@ -300,7 +300,7 @@ namespace ospi {
 		if(sdocptr->GetPageCount() <= spagenumber)
 		{
 			spagenumber = sdocptr->GetPageCount() - 1;
-			std::cerr<<"Try to get non-existing page, take the last page of the document"<<std::endl;
+//			std::cerr<<"Try to get non-existing page, take the last page of the document"<<std::endl;
 		}
 
 		PoDoFo::PdfPage * sourcepage(sdocptr->GetPage(spagenumber));
