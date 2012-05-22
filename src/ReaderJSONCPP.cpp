@@ -343,40 +343,51 @@ namespace ospi {
 
 		left = slot.get(K_SlotLeft, 0).asDouble();
 		top = slot.get(K_SlotTop, 0).asDouble();
-		if(rotation == 1 || rotation == 3)
+		if(slotDimMod == V_DimModAbsolute)
 		{
-			if(slotDimMod == V_DimModAbsolute)
+			width = slot.get(K_SlotWidth, /*cwidth*/ 0).asDouble();
+			height = slot.get(K_SlotHeight, /*cheight*/ 0).asDouble();
+			if(width == double(0) || height == double(0))
 			{
-				height = slot.get(K_SlotWidth, cwidth).asDouble();
-				width = slot.get(K_SlotHeight, cheight).asDouble();
-			}
-			else if(slotDimMod == V_DimModRelative)
-			{
-				height = cwidth + slot.get(K_SlotWidth, 0).asDouble();
-				width = cheight + slot.get(K_SlotHeight, 0).asDouble();
-			}
-			else if(slotDimMod == V_DimModPercent)
-			{
-				height = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
-				width = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+				if(rotation == 1 || rotation == 3)
+				{
+					height = cwidth;
+					width = cheight;
+				}
+				else
+				{
+					width = cwidth;
+					height = cheight;
+				}
 			}
 		}
 		else
 		{
-			if(slotDimMod == V_DimModAbsolute)
+			if(rotation == 1 || rotation == 3)
 			{
-				width = slot.get(K_SlotWidth, cwidth).asDouble();
-				height = slot.get(K_SlotHeight, cheight).asDouble();
+				if(slotDimMod == V_DimModRelative)
+				{
+					height = cwidth + slot.get(K_SlotWidth, 0).asDouble();
+					width = cheight + slot.get(K_SlotHeight, 0).asDouble();
+				}
+				else if(slotDimMod == V_DimModPercent)
+				{
+					height = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
+					width = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+				}
 			}
-			else if(slotDimMod == V_DimModRelative)
+			else
 			{
-				width = cwidth + slot.get(K_SlotWidth, 0).asDouble();
-				height = cheight + slot.get(K_SlotHeight, 0).asDouble();
-			}
-			else if(slotDimMod == V_DimModPercent)
-			{
-				width = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
-				height = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+				if(slotDimMod == V_DimModRelative)
+				{
+					width = cwidth + slot.get(K_SlotWidth, 0).asDouble();
+					height = cheight + slot.get(K_SlotHeight, 0).asDouble();
+				}
+				else if(slotDimMod == V_DimModPercent)
+				{
+					width = cwidth * (slot.get(K_SlotWidth, 100.0).asDouble() / 100.0);
+					height = cheight * (slot.get(K_SlotHeight, 100.0).asDouble() / 100.0);
+				}
 			}
 		}
 		bottom = targetPageRect.GetHeight() - (top + height);
