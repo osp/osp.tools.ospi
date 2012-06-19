@@ -424,6 +424,10 @@ namespace ospi {
 						else if ( co->HasStream() )
 						{
 							co->GetStream()->GetFilteredCopy ( &outMemStream );
+							// this is a workaround to avoid situations where concatenation of streams
+							// would end up forming invalid token by lack of white space
+							// eg [...Q][Q...]
+							outMemStream.Write("\n",1);
 							break;
 						}
 					}
