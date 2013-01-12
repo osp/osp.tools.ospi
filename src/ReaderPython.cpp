@@ -103,7 +103,7 @@ namespace ospi {
 		double sy = boost::python::extract<double>(sc[1]);
 		Transform t;
 		t.translate(tx, ty);
-		t.rotate(rot);
+		t.rotate(rot, ospi::Point(tx,ty));
 		t.scale(sx, sy);
 
 
